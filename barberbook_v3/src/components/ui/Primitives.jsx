@@ -37,7 +37,9 @@ export function Toggle({ on, onToggle, disabled }) {
 export function Spinner({ size = 'sm', page }) {
   if (page) return (
     <div className="spinner-page">
-      <div className="sb-logo-mark" style={{ marginBottom: 0 }}>✂</div>
+      <div className="sb-logo-mark" style={{ marginBottom: 0 }}>
+        <Icon name="scissors" size={32} color="var(--gold)" />
+      </div>
       <div className="spinner spinner-lg" />
       <div style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>Loading…</div>
     </div>
@@ -46,10 +48,12 @@ export function Spinner({ size = 'sm', page }) {
 }
 
 // ── EMPTY STATE ───────────────────────────────────────────────────────────────
-export function Empty({ icon = '✂', title, sub, action }) {
+export function Empty({ icon = 'scissors', title, sub, action }) {
   return (
     <div className="empty-state">
-      <div className="empty-state-icon">{icon}</div>
+      <div className="empty-state-icon">
+        <Icon name={icon} size={48} color="var(--text-disabled)" />
+      </div>
       <div className="empty-state-title">{title}</div>
       {sub && <div className="empty-state-sub">{sub}</div>}
       {action && <div style={{ marginTop: 16 }}>{action}</div>}

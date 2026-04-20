@@ -90,6 +90,92 @@ export const barbers = {
     supabase.from('barbers').update({ is_available }).eq('id', id),
 }
 
+// ── SHOP BARBERS (NEW RELATIONSHIP TABLE) ───────────────────────
+// This replaces the old "owner creates barber" flow with proper linking
+export const shopBarbers = {
+  // Get all barber links for a shop (owner view)
+  getByShop: (shopId) =>
+    supabase.from('shop_barbers')
+      .select('*, profiles(id, name, email, phone, avatar_url)')
+      .eq('shop_id', shopId)
+      .order('created_at', { ascending: false }),
+
+  // Get active barbers for a shop (public/booking view)
+  getActiveByShop: (shopId) =>
+    supabase.from('shop_barbers')
+      .select('*, profiles(id, name, email, phone, avatar_url)')
+      .eq('shop_id', shopId)
+      .eq('status', 'active')
+      .order('created_at'),
+
+  // Get barber's shop links (barber view)
+  getByBarber: (barberId) =>
+    supabase.from('shop_barbers')
+      .select('*, shops(id, name, address, phone, owner_id)')
+      .eq('barber_id', barberId)
+      .order('created_at', { ascending: false }),
+
+  // Get pending invites for a barber
+  getPendingForBarber: (barberId) =>
+    supabase.from('shop_barbers')
+      .select('*, shops(id, name, address, phone, owner_id, profiles(name))')
+      .eq('barber_id', barberId)
+      .eq('status', 'pending')
+      .order('invited_at', { ascending: false }),
+
+  // Owner invites a barber by email
+  inviteBarber: async (shopId, barberEmail, ownerId) => {
+    // First, find the barber profile by email
+    const { data: barberProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, role')
+      .eq('email', barberEmail.toLowerCase().trim())
+      .eq('role', 'barber')
+      .maybeSingle()
+
+    if (profileError) return { error: profileError }
+    if (!barberProfile) return { error: { message: 'No barber account found with this email. Ask them to sign up first.' } }
+
+    // Create the shop_barbers link
+    return supabase.from('shop_barbers').insert({
+      shop_id: shopId,
+      barber_id: barberProfile.id,
+      status: 'pending',
+      invited_by: ownerId,
+    }).select('*, profiles(name, email)').single()
+  },
+
+  // Barber accepts an invite
+  acceptInvite: (linkId) =>
+    supabase.from('shop_barbers')
+      .update({ status: 'active', responded_at: new Date().toISOString() })
+      .eq('id', linkId)
+      .select().single(),
+
+  // Barber rejects an invite
+  rejectInvite: (linkId) =>
+    supabase.from('shop_barbers')
+      .update({ status: 'rejected', responded_at: new Date().toISOString() })
+      .eq('id', linkId)
+      .select().single(),
+
+  // Owner removes a barber from shop
+  removeBarber: (linkId) =>
+    supabase.from('shop_barbers')
+      .update({ status: 'removed', responded_at: new Date().toISOString() })
+      .eq('id', linkId),
+
+  // Toggle barber availability
+  setAvailability: (linkId, is_available) =>
+    supabase.from('shop_barbers')
+      .update({ is_available })
+      .eq('id', linkId),
+
+  // Delete invite (before accepted)
+  deleteInvite: (linkId) =>
+    supabase.from('shop_barbers').delete().eq('id', linkId).eq('status', 'pending'),
+}
+
 // ── BOOKINGS ─────────────────────────────────────────────────────
 export const bookings = {
   getBarberQueue: (barberId, date) =>

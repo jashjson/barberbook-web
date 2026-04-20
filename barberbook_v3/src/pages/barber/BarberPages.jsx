@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { useBarberQueue } from '../../hooks/useQueue'
-import { bookings as bookingsApi, barbers as barbersApi, analytics } from '../../lib/supabase'
+import { bookings as bookingsApi, barbers as barbersApi, shopBarbers as shopBarbersApi, analytics } from '../../lib/supabase'
 import { format, startOfDay } from 'date-fns'
 import Icon from '../../components/ui/Icon'
-import { Spinner, Empty, SectionHead, StatusBadge, Toggle } from '../../components/ui/Primitives'
+import { Spinner, Empty, SectionHead, StatusBadge, Toggle, Modal } from '../../components/ui/Primitives'
 
 function useBarberProfile(profileId) {
   const [barber, setBarber] = useState(null)
@@ -270,6 +270,46 @@ export function BarberProfile() {
   const { profile, signOut, updateProfile } = useAuth()
   const { barber } = useBarberProfile(profile?.id)
   const { toast } = useToast()
+  const [pendingInvites, setPendingInvites] = useState([])
+  const [myShops, setMyShops] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [responding, setResponding] = useState(null)
+
+  // Fetch shop links and pending invites
+  useEffect(() => {
+    if (!profile?.id) return
+    setLoading(true)
+    Promise.all([
+      shopBarbersApi.getPendingForBarber(profile.id),
+      shopBarbersApi.getByBarber(profile.id)
+    ]).then(([pendingRes, allRes]) => {
+      setPendingInvites(pendingRes.data || [])
+      setMyShops((allRes.data || []).filter(l => l.status === 'active'))
+      setLoading(false)
+    })
+  }, [profile?.id])
+
+  const handleInvite = async (linkId, action) => {
+    setResponding(linkId)
+    const { error } = action === 'accept' 
+      ? await shopBarbersApi.acceptInvite(linkId)
+      : await shopBarbersApi.rejectInvite(linkId)
+    setResponding(null)
+    
+    if (error) {
+      toast(`Failed to ${action} invite`, 'error')
+    } else {
+      toast(action === 'accept' ? 'Invite accepted!' : 'Invite rejected', 'success')
+      // Refresh lists
+      Promise.all([
+        shopBarbersApi.getPendingForBarber(profile.id),
+        shopBarbersApi.getByBarber(profile.id)
+      ]).then(([pendingRes, allRes]) => {
+        setPendingInvites(pendingRes.data || [])
+        setMyShops((allRes.data || []).filter(l => l.status === 'active'))
+      })
+    }
+  }
 
   return (
     <div className="page-inner">
@@ -279,11 +319,71 @@ export function BarberProfile() {
         </div>
         <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 4 }}>{profile?.name}</div>
         <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 4 }}>
-          ✂ Barber · {barber?.shops?.name || 'Unassigned'}
+          {barber?.shops?.name || (myShops.length > 0 ? myShops[0].shops.name : 'No shop assigned')}
         </div>
         <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 10 }}>{profile?.email}</div>
         <span className="badge badge-blue">Barber</span>
       </div>
+
+      {/* Pending Invites */}
+      {!loading && pendingInvites.length > 0 && (
+        <>
+          <SectionHead title="Shop Invitations" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+            {pendingInvites.map(invite => (
+              <div key={invite.id} className="card card-pad" style={{ borderColor: 'var(--gold-bdr)', background: 'var(--gold-bg)' }}>
+                <div className="flex items-center gap-3 mb-3" style={{ marginBottom: 12 }}>
+                  <div className="avatar avatar-md av-gold">
+                    <Icon name="store" size={18} color="var(--gold)" />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: 15 }}>{invite.shops.name}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>
+                      {invite.shops.address || 'No address'} · Invited by {invite.shops.profiles?.name}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button 
+                    className="btn btn-gold flex-1" 
+                    onClick={() => handleInvite(invite.id, 'accept')}
+                    disabled={responding === invite.id}
+                  >
+                    {responding === invite.id ? <Spinner /> : <Icon name="check" size={14} />}
+                    Accept
+                  </button>
+                  <button 
+                    className="btn btn-ghost flex-1" 
+                    onClick={() => handleInvite(invite.id, 'reject')}
+                    disabled={responding === invite.id}
+                  >
+                    <Icon name="x" size={14} /> Decline
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* My Shops */}
+      {!loading && myShops.length > 0 && (
+        <>
+          <SectionHead title="My Shops" />
+          <div className="card" style={{ marginBottom: 16 }}>
+            {myShops.map(link => (
+              <div key={link.id} className="menu-item" style={{ cursor: 'default' }}>
+                <div className="menu-item-icon"><Icon name="store" size={16} color="var(--blue)" /></div>
+                <div className="menu-item-text">
+                  <div className="menu-item-label">{link.shops.name}</div>
+                  <div className="menu-item-sub">{link.shops.address || 'No address'}</div>
+                </div>
+                <span className="badge badge-green">Active</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
       <div className="card">
         {[

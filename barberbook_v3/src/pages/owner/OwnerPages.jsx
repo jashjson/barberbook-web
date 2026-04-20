@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { useOwnerDashboard } from '../../hooks/useQueue'
-import { shops as shopsApi, barbers as barbersApi } from '../../lib/supabase'
+import { shops as shopsApi, barbers as barbersApi, shopBarbers as shopBarbersApi } from '../../lib/supabase'
 import { format } from 'date-fns'
 import Icon from '../../components/ui/Icon'
 import { Spinner, Empty, SectionHead, StatusBadge, Toggle, Modal } from '../../components/ui/Primitives'
@@ -178,74 +178,188 @@ export function OwnerStaff() {
   const { profile } = useAuth()
   const { toast } = useToast()
   const { shop, refresh } = useOwnerShop(profile?.id)
-  const [showAdd, setShowAdd] = useState(false)
-  const [newName, setNewName] = useState('')
-  const [adding, setAdding] = useState(false)
+  const [showInvite, setShowInvite] = useState(false)
+  const [barberEmail, setBarberEmail] = useState('')
+  const [inviting, setInviting] = useState(false)
+  const [barberLinks, setBarberLinks] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  const addBarber = async () => {
-    if (!newName.trim() || !shop) return
-    setAdding(true)
-    const { error } = await barbersApi.create({ shop_id: shop.id, name: newName.trim(), is_available: true, is_active: true })
-    setAdding(false)
-    if (error) toast('Failed to add barber', 'error')
-    else { toast('Barber added!', 'success'); setShowAdd(false); setNewName(''); refresh() }
+  // Fetch barber links
+  useEffect(() => {
+    if (!shop?.id) return
+    setLoading(true)
+    shopBarbersApi.getByShop(shop.id).then(({ data }) => {
+      setBarberLinks(data || [])
+      setLoading(false)
+    })
+  }, [shop?.id])
+
+  const inviteBarber = async () => {
+    if (!barberEmail.trim() || !shop) return
+    setInviting(true)
+    const { data, error } = await shopBarbersApi.inviteBarber(shop.id, barberEmail.trim(), profile.id)
+    setInviting(false)
+    if (error) {
+      toast(error.message || 'Failed to invite barber', 'error')
+    } else {
+      toast(`Invite sent to ${data.profiles.name}!`, 'success')
+      setShowInvite(false)
+      setBarberEmail('')
+      // Refresh the list
+      shopBarbersApi.getByShop(shop.id).then(({ data }) => setBarberLinks(data || []))
+    }
   }
 
-  const toggleBarber = async (id, current) => {
-    const { error } = await barbersApi.setAvailability(id, !current)
-    if (!error) { refresh(); toast('Updated') }
+  const toggleAvailability = async (linkId, current) => {
+    const { error } = await shopBarbersApi.setAvailability(linkId, !current)
+    if (!error) {
+      shopBarbersApi.getByShop(shop.id).then(({ data }) => setBarberLinks(data || []))
+      toast('Availability updated')
+    }
   }
+
+  const removeBarber = async (linkId, barberName) => {
+    if (!confirm(`Remove ${barberName} from your shop?`)) return
+    const { error } = await shopBarbersApi.removeBarber(linkId)
+    if (error) toast('Failed to remove barber', 'error')
+    else {
+      toast('Barber removed', 'default')
+      shopBarbersApi.getByShop(shop.id).then(({ data }) => setBarberLinks(data || []))
+    }
+  }
+
+  const deleteInvite = async (linkId) => {
+    const { error } = await shopBarbersApi.deleteInvite(linkId)
+    if (error) toast('Failed to cancel invite', 'error')
+    else {
+      toast('Invite cancelled', 'default')
+      shopBarbersApi.getByShop(shop.id).then(({ data }) => setBarberLinks(data || []))
+    }
+  }
+
+  const activeBarbers = barberLinks.filter(l => l.status === 'active')
+  const pendingInvites = barberLinks.filter(l => l.status === 'pending')
+
+  if (loading) return <div className="page-inner"><Spinner page /></div>
 
   return (
     <div className="page-inner">
       <div className="flex items-center justify-between mb-6">
         <div style={{ fontWeight: 700, fontSize: 18 }}>Staff Management</div>
-        <button className="btn btn-gold btn-sm" onClick={() => setShowAdd(true)}>
-          <Icon name="plus" size={13} /> Add Barber
+        <button className="btn btn-gold btn-sm" onClick={() => setShowInvite(true)}>
+          <Icon name="mail" size={13} /> Invite Barber
         </button>
       </div>
 
       {!shop ? (
-        <Empty icon="🏪" title="Set up your shop first" sub="Create your shop in 'My Shop' before managing staff." />
-      ) : shop.barbers?.length === 0 ? (
-        <Empty icon="✂" title="No barbers yet" sub="Add your first barber to get started." action={<button className="btn btn-gold" onClick={() => setShowAdd(true)}>Add First Barber</button>} />
+        <Empty icon={<Icon name="store" size={32} color="var(--text-tertiary)" />} title="Set up your shop first" sub="Create your shop in 'My Shop' before managing staff." />
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {shop.barbers?.map(barber => (
-            <div key={barber.id} className="card card-pad card-hover">
-              <div className="flex items-center gap-3 mb-4" style={{ marginBottom: 14 }}>
-                <div className="avatar avatar-lg av-blue">{barber.name?.slice(0,2).toUpperCase()}</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700, fontSize: 15 }}>{barber.name}</div>
-                  <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>Barber · {shop.name}</div>
-                </div>
-                <span className={`badge ${barber.is_available ? 'badge-green' : 'badge-muted'}`}>
-                  {barber.is_available ? 'Available' : 'Unavailable'}
-                </span>
+        <>
+          {/* Pending Invites */}
+          {pendingInvites.length > 0 && (
+            <>
+              <SectionHead title="Pending Invites" />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+                {pendingInvites.map(link => (
+                  <div key={link.id} className="card card-pad">
+                    <div className="flex items-center gap-3">
+                      <div className="avatar avatar-md av-muted">
+                        <Icon name="clock" size={18} color="var(--text-tertiary)" />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>{link.profiles.name}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>
+                          {link.profiles.email} · Invited {format(new Date(link.invited_at), 'MMM d')}
+                        </div>
+                      </div>
+                      <span className="badge badge-amber">Pending</span>
+                      <button className="btn btn-ghost btn-sm" onClick={() => deleteInvite(link.id)}>
+                        <Icon name="x" size={14} /> Cancel
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="divider" />
-              <div className="toggle-row" style={{ paddingTop: 8 }}>
-                <div>
-                  <div className="toggle-row-label" style={{ fontSize: 13 }}>Available Today</div>
-                </div>
-                <Toggle on={barber.is_available} onToggle={() => toggleBarber(barber.id, barber.is_available)} />
+            </>
+          )}
+
+          {/* Active Barbers */}
+          {activeBarbers.length === 0 && pendingInvites.length === 0 ? (
+            <Empty 
+              icon={<Icon name="scissors" size={32} color="var(--text-tertiary)" />} 
+              title="No barbers yet" 
+              sub="Invite barbers who have BarberBook accounts to join your shop." 
+              action={<button className="btn btn-gold" onClick={() => setShowInvite(true)}>Invite First Barber</button>} 
+            />
+          ) : activeBarbers.length > 0 ? (
+            <>
+              <SectionHead title="Active Barbers" />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {activeBarbers.map(link => (
+                  <div key={link.id} className="card card-pad card-hover">
+                    <div className="flex items-center gap-3 mb-4" style={{ marginBottom: 14 }}>
+                      <div className="avatar avatar-lg av-blue">
+                        {link.profiles.name?.slice(0,2).toUpperCase()}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 700, fontSize: 15 }}>{link.profiles.name}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>
+                          {link.profiles.email}
+                          {link.profiles.phone && ` · ${link.profiles.phone}`}
+                        </div>
+                      </div>
+                      <span className={`badge ${link.is_available ? 'badge-green' : 'badge-muted'}`}>
+                        {link.is_available ? 'Available' : 'Unavailable'}
+                      </span>
+                    </div>
+                    <div className="divider" />
+                    <div className="flex items-center justify-between" style={{ paddingTop: 12 }}>
+                      <div className="toggle-row" style={{ flex: 1, padding: 0 }}>
+                        <div className="toggle-row-label" style={{ fontSize: 13 }}>Available Today</div>
+                        <Toggle on={link.is_available} onToggle={() => toggleAvailability(link.id, link.is_available)} />
+                      </div>
+                      <button 
+                        className="btn btn-ghost btn-sm" 
+                        style={{ color: 'var(--red)' }}
+                        onClick={() => removeBarber(link.id, link.profiles.name)}
+                      >
+                        <Icon name="trash" size={14} /> Remove
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
-          ))}
-        </div>
+            </>
+          ) : null}
+        </>
       )}
 
-      {showAdd && (
-        <Modal title="Add New Barber" onClose={() => setShowAdd(false)}>
+      {showInvite && (
+        <Modal title="Invite Barber to Your Shop" onClose={() => setShowInvite(false)}>
+          <div style={{ background: 'var(--blue-bg)', border: '1px solid rgba(86,156,224,0.25)', borderRadius: 'var(--radius-sm)', padding: '12px 14px', fontSize: 12, color: 'var(--blue)', marginBottom: 16, lineHeight: 1.5 }}>
+            <Icon name="info" size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />
+            The barber must already have a BarberBook account with role "Barber". They'll receive a notification to accept your invite.
+          </div>
           <div className="form-field">
-            <label className="form-label">Barber's Full Name</label>
-            <input className="form-input" placeholder="e.g. Ravi Kumar" value={newName} onChange={e => setNewName(e.target.value)} autoFocus onKeyDown={e => e.key === 'Enter' && addBarber()} />
-            <div className="form-hint">The barber will need their own BarberBook account to manage their queue.</div>
+            <label className="form-label">Barber's Email Address</label>
+            <div className="input-group">
+              <div className="input-icon"><Icon name="mail" size={15} /></div>
+              <input 
+                className="form-input" 
+                type="email"
+                placeholder="barber@example.com" 
+                value={barberEmail} 
+                onChange={e => setBarberEmail(e.target.value)} 
+                autoFocus 
+                onKeyDown={e => e.key === 'Enter' && inviteBarber()} 
+              />
+            </div>
+            <div className="form-hint">Enter the email they used to sign up on BarberBook.</div>
           </div>
           <div className="flex gap-3 mt-4" style={{ marginTop: 16 }}>
-            <button className="btn btn-ghost flex-1" onClick={() => setShowAdd(false)}>Cancel</button>
-            <button className="btn btn-gold flex-1" onClick={addBarber} disabled={adding || !newName.trim()}>
-              {adding ? <Spinner /> : null} Add Barber
+            <button className="btn btn-ghost flex-1" onClick={() => setShowInvite(false)}>Cancel</button>
+            <button className="btn btn-gold flex-1" onClick={inviteBarber} disabled={inviting || !barberEmail.trim()}>
+              {inviting ? <Spinner /> : <Icon name="mail" size={14} />} Send Invite
             </button>
           </div>
         </Modal>
