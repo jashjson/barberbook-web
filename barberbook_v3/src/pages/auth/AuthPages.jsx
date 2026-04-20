@@ -88,8 +88,20 @@ function Calculator({ onClose }) {
     ['7', '8', '9', '×'],
     ['4', '5', '6', '-'],
     ['1', '2', '3', '+'],
-    ['0', '.', '='],
+    ['0', '.', '=', 'Copy'],
   ]
+
+  const handleCopy = () => {
+    const expression = operation && prevValue !== null 
+      ? `${prevValue} ${operation} ${display}`
+      : display
+    
+    navigator.clipboard.writeText(expression).then(() => {
+      // Visual feedback - you could add a toast here if you want
+    }).catch(err => {
+      console.error('Failed to copy:', err)
+    })
+  }
 
   return (
     <Modal title="Calculator" onClose={onClose} maxWidth={320}>
@@ -127,10 +139,11 @@ function Calculator({ onClose }) {
 
       <div style={{ display: 'grid', gap: 8 }}>
         {buttons.map((row, i) => (
-          <div key={i} style={{ display: 'grid', gridTemplateColumns: row.length === 3 ? '1fr 1fr 1fr' : '1fr 1fr 1fr 1fr', gap: 8 }}>
+          <div key={i} style={{ display: 'grid', gridTemplateColumns: row.length === 3 ? '1fr 1fr 1fr' : row.length === 4 && i === 4 ? '2fr 1fr 1fr 1fr' : '1fr 1fr 1fr 1fr', gap: 8 }}>
             {row.map(btn => {
               const isOperation = ['÷', '×', '-', '+', '='].includes(btn)
               const isSpecial = ['C', '⌫'].includes(btn)
+              const isCopy = btn === 'Copy'
               const isZero = btn === '0'
               
               return (
@@ -141,21 +154,22 @@ function Calculator({ onClose }) {
                     else if (btn === '⌫') handleBackspace()
                     else if (btn === '=') handleEquals()
                     else if (btn === '.') handleDecimal()
+                    else if (btn === 'Copy') handleCopy()
                     else if (isOperation) handleOperation(btn)
                     else handleNumber(btn)
                   }}
                   style={{
                     padding: '16px',
-                    fontSize: 18,
+                    fontSize: isCopy ? 13 : 18,
                     fontWeight: 600,
                     border: 'none',
                     borderRadius: 'var(--radius-sm)',
-                    background: isOperation ? 'var(--gold)' : isSpecial ? 'var(--surface-4)' : 'var(--surface-3)',
+                    background: isOperation ? 'var(--gold)' : isCopy ? 'var(--surface-4)' : isSpecial ? 'var(--surface-4)' : 'var(--surface-3)',
                     color: isOperation ? 'var(--black)' : 'var(--text-primary)',
                     cursor: 'pointer',
                     transition: 'all 0.15s',
                     fontFamily: 'inherit',
-                    gridColumn: isZero ? 'span 2' : 'span 1',
+                    gridColumn: isZero ? 'span 1' : 'span 1',
                   }}
                   onMouseEnter={e => e.target.style.transform = 'scale(0.95)'}
                   onMouseLeave={e => e.target.style.transform = 'scale(1)'}
@@ -166,15 +180,6 @@ function Calculator({ onClose }) {
             })}
           </div>
         ))}
-      </div>
-
-      <div style={{ 
-        marginTop: 16, 
-        fontSize: 11, 
-        color: 'var(--text-tertiary)', 
-        textAlign: 'center' 
-      }}>
-        Why? Because why not! 🤷
       </div>
     </Modal>
   )

@@ -68,8 +68,8 @@ export default function App() {
       <Route path="/login"    element={<PublicRoute><LoginPage /></PublicRoute>} />
       <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
       <Route path="/app/*"    element={<ProtectedRoute><AppPages /></ProtectedRoute>} />
-      <Route path="/"         element={<Navigate to="/app" replace />} />
-      <Route path="*"         element={<Navigate to="/app" replace />} />
+      <Route path="/"         element={<Navigate to="/login" replace />} />
+      <Route path="*"         element={<Navigate to="/login" replace />} />
     </Routes>
   )
 }
