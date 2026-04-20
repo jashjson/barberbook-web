@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Calculator — BarberBook</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --gold:#C9A84C;
+  --gold-l:#E8C97A;
+  --gold-bg:rgba(201,168,76,.08);
+  --gold-bdr:rgba(201,168,76,.2);
+  --black:#06070A;
+  --surface:#0E0F13;
+  --s2:#141519;
+  --s3:#1A1C22;
+  --s4:#21242C;
+  --outline:rgba(255,255,255,.06);
+  --outline2:rgba(255,255,255,.1);
+  --cream:#F2EEE6;
+  --muted:#6B6979;
+  --light:#9A97A0;
+  --red:#E05252;
+  --green:#3DBD7D;
+  --radius:14px;
+  --radius-sm:8px;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:'DM Sans',sans-serif;
+  background:var(--black);
+  color:var(--cream);
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+}
+
+/* NAV */
+nav{
+  position:fixed;
+  top:0;
+  width:100%;
+  z-index:100;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 4rem;
+  height:68px;
+  background:rgba(6,7,10,.92);
+  backdrop-filter:blur(16px) saturate(1.4);
+  border-bottom:1px solid var(--outline);
+}
+.nav-logo{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:22px;
+  letter-spacing:4px;
+  color:var(--gold);
+  display:flex;
+  align-items:center;
+  gap:10px;
+  text-decoration:none;
+}
+.nav-logo-mark{
+  width:32px;
+  height:32px;
+  background:var(--gold);
+  border-radius:8px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:15px;
+  color:var(--black);
+}
+.nav-logo span{color:var(--cream)}
+.nav-back{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 16px;
+  border:1px solid var(--gold-bdr);
+  border-radius:var(--radius-sm);
+  color:var(--gold);
+  font-size:13px;
+  font-weight:600;
+  text-decoration:none;
+  transition:all .2s;
+}
+.nav-back:hover{
+  background:var(--gold-bg);
+  border-color:var(--gold);
+}
+
+/* MAIN */
+main{
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:100px 2rem 2rem;
+  position:relative;
+  overflow:hidden;
+}
+main::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:radial-gradient(ellipse 60% 50% at 50% 50%,rgba(201,168,76,.045) 0%,transparent 70%);
+  pointer-events:none;
+}
+
+/* CALCULATOR CONTAINER */
+.calc-container{
+  position:relative;
+  z-index:1;
+  max-width:420px;
+  width:100%;
+  animation:fadeUp .6s ease both;
+}
+
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(24px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+.calc-header{
+  text-align:center;
+  margin-bottom:32px;
+}
+.calc-tag{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  background:var(--gold-bg);
+  border:1px solid var(--gold-bdr);
+  color:var(--gold);
+  padding:5px 14px;
+  border-radius:20px;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:1.5px;
+  text-transform:uppercase;
+  margin-bottom:16px;
+}
+.calc-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:3.2rem;
+  line-height:1;
+  letter-spacing:2px;
+  margin-bottom:10px;
+}
+.calc-title .gold{color:var(--gold)}
+.calc-subtitle{
+  font-size:14px;
+  color:var(--light);
+}
+
+/* CALCULATOR CARD */
+.calc-card{
+  background:var(--surface);
+  border:1px solid var(--outline2);
+  border-radius:24px;
+  padding:28px;
+  box-shadow:0 40px 80px rgba(0,0,0,.5),
+             0 0 0 1px rgba(255,255,255,.03),
+             0 0 60px rgba(201,168,76,.04);
+  backdrop-filter:blur(20px);
+}
+
+/* DISPLAY */
+.calc-display{
+  background:linear-gradient(145deg,var(--s2),var(--s3));
+  border:1px solid var(--outline);
+  border-radius:16px;
+  padding:24px 20px;
+  margin-bottom:24px;
+  min-height:120px;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+  position:relative;
+  overflow:hidden;
+}
+.calc-display::before{
+  content:'';
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(201,168,76,.2),transparent);
+}
+.calc-prev{
+  font-size:14px;
+  color:var(--muted);
+  text-align:right;
+  margin-bottom:8px;
+  min-height:20px;
+  font-family:monospace;
+}
+.calc-current{
+  font-size:48px;
+  font-weight:700;
+  color:var(--gold);
+  text-align:right;
+  font-family:monospace;
+  word-break:break-all;
+  line-height:1.1;
+}
+
+/* BUTTONS */
+.calc-buttons{
+  display:grid;
+  gap:10px;
+}
+.calc-row{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+}
+.calc-btn{
+  padding:20px;
+  font-size:20px;
+  font-weight:600;
+  border:none;
+  border-radius:12px;
+  cursor:pointer;
+  transition:all .15s;
+  font-family:inherit;
+  position:relative;
+  overflow:hidden;
+}
+.calc-btn::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,.05),transparent);
+  opacity:0;
+  transition:opacity .15s;
+}
+.calc-btn:hover::before{opacity:1}
+.calc-btn:active{transform:scale(0.96)}
+
+/* Button Types */
+.btn-number{
+  background:var(--s3);
+  color:var(--cream);
+  border:1px solid var(--outline);
+}
+.btn-number:hover{
+  background:var(--s4);
+  border-color:var(--outline2);
+}
+
+.btn-operator{
+  background:var(--gold);
+  color:var(--black);
+  border:1px solid rgba(201,168,76,.3);
+  font-weight:700;
+}
+.btn-operator:hover{
+  background:var(--gold-l);
+  box-shadow:0 4px 16px rgba(201,168,76,.25);
+}
+
+.btn-function{
+  background:var(--s4);
+  color:var(--light);
+  border:1px solid var(--outline);
+  font-size:18px;
+}
+.btn-function:hover{
+  background:var(--s3);
+  color:var(--cream);
+}
+
+.btn-equals{
+  background:linear-gradient(135deg,var(--gold),var(--gold-l));
+  color:var(--black);
+  font-weight:700;
+  border:1px solid rgba(201,168,76,.3);
+  box-shadow:0 4px 12px rgba(201,168,76,.2);
+}
+.btn-equals:hover{
+  box-shadow:0 6px 20px rgba(201,168,76,.35);
+  transform:translateY(-1px);
+}
+
+.btn-zero{grid-column:span 2}
+
+/* FOOTER */
+.calc-footer{
+  text-align:center;
+  margin-top:24px;
+  font-size:12px;
+  color:var(--muted);
+}
+.calc-footer a{
+  color:var(--gold);
+  text-decoration:none;
+  font-weight:600;
+}
+.calc-footer a:hover{
+  text-decoration:underline;
+}
+
+/* KEYBOARD HINT */
+.keyboard-hint{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  margin-top:20px;
+  padding:12px;
+  background:var(--s2);
+  border:1px solid var(--outline);
+  border-radius:10px;
+  font-size:11px;
+  color:var(--muted);
+}
+.kbd{
+  padding:3px 8px;
+  background:var(--s4);
+  border:1px solid var(--outline);
+  border-radius:4px;
+  font-family:monospace;
+  font-size:10px;
+  color:var(--light);
+}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  nav{padding:0 1.5rem}
+  main{padding:90px 1rem 1rem}
+  .calc-title{font-size:2.4rem}
+  .calc-current{font-size:36px}
+  .calc-btn{padding:18px;font-size:18px}
+  .keyboard-hint{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">
+    <div class="nav-logo-mark">✂</div>
+    Barber<span>Book</span>
+  </a>
+  <a href="index.html" class="nav-back">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="19" y1="12" x2="5" y2="12"/>
+      <polyline points="12 19 5 12 12 5"/>
+    </svg>
+    Back to Home
+  </a>
+</nav>
+
+<!-- MAIN -->
+<main>
+  <div class="calc-container">
+    <div class="calc-header">
+      <div class="calc-tag">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="4" y="2" width="16" height="20" rx="2"/>
+          <line x1="8" y1="6" x2="16" y2="6"/>
+          <line x1="8" y1="10" x2="16" y2="10"/>
+          <line x1="8" y1="14" x2="16" y2="14"/>
+          <line x1="8" y1="18" x2="10" y2="18"/>
+        </svg>
+        Calculator
+      </div>
+      <h1 class="calc-title">CALCULATE<br><span class="gold">ANYTHING.</span></h1>
+      <p class="calc-subtitle">A beautiful calculator.</p>
+    </div>
+
+    <div class="calc-card">
+      <div class="calc-display">
+        <div class="calc-prev" id="prevDisplay"></div>
+        <div class="calc-current" id="currentDisplay">0</div>
+      </div>
+
+      <div class="calc-buttons">
+        <div class="calc-row">
+          <button class="calc-btn btn-function" data-action="clear">C</button>
+          <button class="calc-btn btn-function" data-action="backspace">⌫</button>
+          <button class="calc-btn btn-function" data-action="percent">%</button>
+          <button class="calc-btn btn-operator" data-action="divide">÷</button>
+        </div>
+        <div class="calc-row">
+          <button class="calc-btn btn-number" data-number="7">7</button>
+          <button class="calc-btn btn-number" data-number="8">8</button>
+          <button class="calc-btn btn-number" data-number="9">9</button>
+          <button class="calc-btn btn-operator" data-action="multiply">×</button>
+        </div>
+        <div class="calc-row">
+          <button class="calc-btn btn-number" data-number="4">4</button>
+          <button class="calc-btn btn-number" data-number="5">5</button>
+          <button class="calc-btn btn-number" data-number="6">6</button>
+          <button class="calc-btn btn-operator" data-action="subtract">−</button>
+        </div>
+        <div class="calc-row">
+          <button class="calc-btn btn-number" data-number="1">1</button>
+          <button class="calc-btn btn-number" data-number="2">2</button>
+          <button class="calc-btn btn-number" data-number="3">3</button>
+          <button class="calc-btn btn-operator" data-action="add">+</button>
+        </div>
+        <div class="calc-row">
+          <button class="calc-btn btn-number btn-zero" data-number="0">0</button>
+          <button class="calc-btn btn-number" data-action="decimal">.</button>
+          <button class="calc-btn btn-equals" data-action="equals">=</button>
+        </div>
+        <div class="calc-row">
+          <button class="calc-btn btn-function" data-action="copy" style="grid-column:span 4;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:6px;">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+            Copy Expression
+          </button>
+        </div>
+      </div>
+
+      <div class="keyboard-hint">
+        <span>Keyboard shortcuts:</span>
+        <span class="kbd">0-9</span>
+        <span class="kbd">+ - * /</span>
+        <span class="kbd">Enter</span>
+        <span class="kbd">Backspace</span>
+        <span class="kbd">Esc</span>
+      </div>
+    </div>
+
+    <div class="calc-footer">
+      Made with ✂ by <a href="index.html">BarberBook</a>
+    </div>
+  </div>
+</main>
+
+<script>
+// Calculator Logic
+let currentValue = '0';
+let previousValue = '';
+let operation = null;
+let shouldResetDisplay = false;
+
+const currentDisplay = document.getElementById('currentDisplay');
+const prevDisplay = document.getElementById('prevDisplay');
+
+// Update display
+function updateDisplay() {
+  currentDisplay.textContent = currentValue;
+  if (previousValue && operation) {
+    prevDisplay.textContent = `${previousValue} ${getOperatorSymbol(operation)}`;
+  } else {
+    prevDisplay.textContent = '';
+  }
+}
+
+function getOperatorSymbol(op) {
+  const symbols = { add: '+', subtract: '−', multiply: '×', divide: '÷' };
+  return symbols[op] || '';
+}
+
+// Handle number input
+function inputNumber(num) {
+  if (shouldResetDisplay) {
+    currentValue = String(num);
+    shouldResetDisplay = false;
+  } else {
+    currentValue = currentValue === '0' ? String(num) : currentValue + num;
+  }
+  updateDisplay();
+}
+
+// Handle decimal
+function inputDecimal() {
+  if (shouldResetDisplay) {
+    currentValue = '0.';
+    shouldResetDisplay = false;
+  } else if (!currentValue.includes('.')) {
+    currentValue += '.';
+  }
+  updateDisplay();
+}
+
+// Handle operation
+function handleOperation(op) {
+  if (operation && !shouldResetDisplay) {
+    calculate();
+  }
+  previousValue = currentValue;
+  operation = op;
+  shouldResetDisplay = true;
+  updateDisplay();
+}
+
+// Calculate result
+function calculate() {
+  const prev = parseFloat(previousValue);
+  const current = parseFloat(currentValue);
+  
+  if (isNaN(prev) || isNaN(current)) return;
+  
+  let result;
+  switch (operation) {
+    case 'add': result = prev + current; break;
+    case 'subtract': result = prev - current; break;
+    case 'multiply': result = prev * current; break;
+    case 'divide': result = current !== 0 ? prev / current : 0; break;
+    default: return;
+  }
+  
+  currentValue = String(result);
+  operation = null;
+  previousValue = '';
+  shouldResetDisplay = true;
+  updateDisplay();
+}
+
+// Clear
+function clear() {
+  currentValue = '0';
+  previousValue = '';
+  operation = null;
+  shouldResetDisplay = false;
+  updateDisplay();
+}
+
+// Backspace
+function backspace() {
+  if (currentValue.length > 1) {
+    currentValue = currentValue.slice(0, -1);
+  } else {
+    currentValue = '0';
+  }
+  updateDisplay();
+}
+
+// Percent
+function percent() {
+  currentValue = String(parseFloat(currentValue) / 100);
+  updateDisplay();
+}
+
+// Copy expression
+function copyExpression() {
+  const expression = previousValue && operation 
+    ? `${previousValue} ${getOperatorSymbol(operation)} ${currentValue}`
+    : currentValue;
+  
+  navigator.clipboard.writeText(expression).then(() => {
+    // Visual feedback
+    const btn = document.querySelector('[data-action="copy"]');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:6px;"><polyline points="20 6 9 17 4 12"/></svg>Copied!';
+    btn.style.background = 'var(--green)';
+    btn.style.color = 'var(--black)';
+    
+    setTimeout(() => {
+      btn.innerHTML = originalText;
+      btn.style.background = '';
+      btn.style.color = '';
+    }, 1500);
+  }).catch(err => {
+    console.error('Failed to copy:', err);
+  });
+}
+
+// Button clicks
+document.querySelectorAll('.calc-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const number = btn.dataset.number;
+    const action = btn.dataset.action;
+    
+    if (number !== undefined) {
+      inputNumber(number);
+    } else if (action) {
+      switch (action) {
+        case 'clear': clear(); break;
+        case 'backspace': backspace(); break;
+        case 'percent': percent(); break;
+        case 'decimal': inputDecimal(); break;
+        case 'equals': calculate(); break;
+        case 'copy': copyExpression(); break;
+        case 'add':
+        case 'subtract':
+        case 'multiply':
+        case 'divide':
+          handleOperation(action);
+          break;
+      }
+    }
+  });
+});
+
+// Keyboard support
+document.addEventListener('keydown', (e) => {
+  if (e.key >= '0' && e.key <= '9') {
+    inputNumber(e.key);
+  } else if (e.key === '.') {
+    inputDecimal();
+  } else if (e.key === '+') {
+    handleOperation('add');
+  } else if (e.key === '-') {
+    handleOperation('subtract');
+  } else if (e.key === '*') {
+    handleOperation('multiply');
+  } else if (e.key === '/') {
+    e.preventDefault();
+    handleOperation('divide');
+  } else if (e.key === 'Enter' || e.key === '=') {
+    e.preventDefault();
+    calculate();
+  } else if (e.key === 'Backspace') {
+    e.preventDefault();
+    backspace();
+  } else if (e.key === 'Escape') {
+    clear();
+  } else if (e.key === '%') {
+    percent();
+  }
+});
+
+// Initialize
+updateDisplay();
+</script>
+
+</body>
+</html>
