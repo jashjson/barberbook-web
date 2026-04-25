@@ -29,16 +29,18 @@ CREATE INDEX IF NOT EXISTS idx_profiles_phone ON profiles(phone);
 
 -- ── SHOPS ─────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS shops (
-  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  owner_id    UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  name        TEXT NOT NULL,
-  address     TEXT,
-  phone       TEXT,
-  plan        TEXT NOT NULL DEFAULT 'free'
-                CHECK (plan IN ('free','standard','premium')),
-  is_active   BOOLEAN NOT NULL DEFAULT true,
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_id     UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  name         TEXT NOT NULL,
+  address      TEXT,
+  phone        TEXT,
+  opening_time TIME DEFAULT '09:00:00',
+  closing_time TIME DEFAULT '19:00:00',
+  plan         TEXT NOT NULL DEFAULT 'free'
+                 CHECK (plan IN ('free','standard','premium')),
+  is_active    BOOLEAN NOT NULL DEFAULT true,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX IF NOT EXISTS idx_shops_owner ON shops(owner_id);

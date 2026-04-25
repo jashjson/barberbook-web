@@ -72,6 +72,11 @@ export const shops = {
       .select('*, barbers(id,name,is_available)')
       .eq('owner_id', ownerId).order('created_at'),
 
+  getById: (id) =>
+    supabase.from('shops')
+      .select('*')
+      .eq('id', id).single(),
+
   create: (data) => supabase.from('shops').insert(data).select().single(),
   update: (id, data) => supabase.from('shops').update(data).eq('id', id).select().single(),
 }
@@ -218,11 +223,21 @@ export const bookings = {
     supabase.from('bookings')
       .update({ status, updated_at: new Date().toISOString() })
       .eq('id', id).select().single(),
+  
+  update: (id, data) =>
+    supabase.from('bookings')
+      .update({ ...data, updated_at: new Date().toISOString() })
+      .eq('id', id).select().single(),
 
   cancel: (id, userId) =>
     supabase.from('bookings')
       .update({ status: 'cancelled', updated_at: new Date().toISOString() })
       .eq('id', id).eq('user_id', userId),
+  
+  cancelByBarber: (id) =>
+    supabase.from('bookings')
+      .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+      .eq('id', id).select().single(),
 
   getBookedSlots: (barberId, date) =>
     supabase.from('bookings')

@@ -174,7 +174,12 @@ export function CustomerBook() {
     { id: 'massage',  label: 'Head Massage',     price: 80,  dur: '15 min' },
   ]
 
-  const { slots, loading: slotsLoading } = useAvailableSlots(selectedBarber?.id, selectedDate)
+  const shopHours = selectedShop ? {
+    opening: selectedShop.opening_time || '09:00:00',
+    closing: selectedShop.closing_time || '19:00:00'
+  } : { opening: '09:00', closing: '19:00' }
+  
+  const { slots, loading: slotsLoading } = useAvailableSlots(selectedBarber?.id, selectedDate, shopHours)
 
   useEffect(() => {
     shopsApi.getAll().then(({ data }) => setAllShops(data || []))
@@ -191,6 +196,24 @@ export function CustomerBook() {
     if (!selectedShop || !selectedBarber || !selectedService || !selectedSlot) {
       toast('Please complete all selections', 'error'); return
     }
+    
+    // Validate booking date is not more than 14 days in advance
+    const selectedDateTime = new Date(`${selectedDate}T${selectedSlot}:00`)
+    const now = new Date()
+    const maxDate = new Date()
+    maxDate.setDate(maxDate.getDate() + 14)
+    
+    if (selectedDateTime > maxDate) {
+      toast('Cannot book more than 14 days in advance', 'error')
+      return
+    }
+    
+    // Validate booking is not in the past
+    if (selectedDateTime <= now) {
+      toast('Cannot book a time slot in the past', 'error')
+      return
+    }
+    
     setLoading(true)
     const slotDT = `${selectedDate}T${selectedSlot}:00`
     const { data, error } = await bookingsApi.create({
@@ -328,7 +351,14 @@ export function CustomerBook() {
 
           <SectionHead title="Select Date & Time" />
           <div className="form-field mb-4">
-            <input type="date" className="form-input" value={selectedDate} min={format(new Date(), 'yyyy-MM-dd')} onChange={e => setSelectedDate(e.target.value)} />
+            <input 
+              type="date" 
+              className="form-input" 
+              value={selectedDate} 
+              min={format(new Date(), 'yyyy-MM-dd')} 
+              max={format(new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd')}
+              onChange={e => setSelectedDate(e.target.value)} 
+            />
           </div>
           {slotsLoading ? <Spinner /> : (
             <div className="slot-grid mb-6" style={{ marginBottom: 20 }}>

@@ -23,11 +23,54 @@ export function BarberQueue() {
   const { toast } = useToast()
   const { barber } = useBarberProfile(profile?.id)
   const { queue, current, waiting, done, loading, refresh } = useBarberQueue(barber?.id)
+  const [editingBooking, setEditingBooking] = useState(null)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editForm, setEditForm] = useState({ slot_time: '', service: '', notes: '' })
 
   const updateStatus = async (id, status) => {
     const { error } = await bookingsApi.updateStatus(id, status)
     if (error) toast('Failed to update status', 'error')
     else { toast(status === 'done' ? '✓ Marked as done' : 'Status updated', 'success'); refresh() }
+  }
+
+  const openEditModal = (booking) => {
+    setEditingBooking(booking)
+    const slotDateTime = new Date(booking.slot_time)
+    const timeStr = format(slotDateTime, 'HH:mm')
+    const dateStr = format(slotDateTime, 'yyyy-MM-dd')
+    setEditForm({
+      slot_date: dateStr,
+      slot_time: timeStr,
+      service: booking.service,
+      notes: booking.notes || ''
+    })
+    setShowEditModal(true)
+  }
+
+  const saveEdit = async () => {
+    if (!editingBooking) return
+    const newSlotTime = `${editForm.slot_date}T${editForm.slot_time}:00`
+    const { error } = await bookingsApi.update(editingBooking.id, {
+      slot_time: newSlotTime,
+      service: editForm.service,
+      notes: editForm.notes
+    })
+    if (error) toast('Failed to update booking', 'error')
+    else {
+      toast('Booking updated successfully', 'success')
+      setShowEditModal(false)
+      refresh()
+    }
+  }
+
+  const cancelBooking = async (id, customerName) => {
+    if (!confirm(`Cancel booking for ${customerName}?`)) return
+    const { error } = await bookingsApi.cancelByBarber(id)
+    if (error) toast('Failed to cancel booking', 'error')
+    else {
+      toast('Booking cancelled', 'default')
+      refresh()
+    }
   }
 
   if (loading) return <div className="page-inner"><Spinner page /></div>
@@ -103,11 +146,72 @@ export function BarberQueue() {
                   Call Next
                 </button>
               )}
+              <button className="btn btn-ghost btn-sm" onClick={() => openEditModal(q)}>
+                <Icon name="edit" size={13} />
+              </button>
+              <button className="btn btn-ghost btn-sm" style={{ color: 'var(--red)' }} onClick={() => cancelBooking(q.id, q.profiles?.name || 'Customer')}>
+                <Icon name="x" size={13} />
+              </button>
               <span className="badge badge-amber">#{i + 1}</span>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Edit Modal */}
+      {showEditModal && editingBooking && (
+        <Modal title="Edit Appointment" onClose={() => setShowEditModal(false)}>
+          <div className="form-field">
+            <label className="form-label">Customer</label>
+            <input className="form-input" value={editingBooking.profiles?.name || 'Customer'} disabled />
+          </div>
+          <div className="form-field">
+            <label className="form-label">Service</label>
+            <input 
+              className="form-input" 
+              value={editForm.service} 
+              onChange={e => setEditForm(f => ({ ...f, service: e.target.value }))} 
+            />
+          </div>
+          <div className="grid-2" style={{ gap: 12 }}>
+            <div className="form-field">
+              <label className="form-label">Date</label>
+              <input 
+                className="form-input" 
+                type="date" 
+                value={editForm.slot_date} 
+                min={format(new Date(), 'yyyy-MM-dd')}
+                onChange={e => setEditForm(f => ({ ...f, slot_date: e.target.value }))} 
+              />
+            </div>
+            <div className="form-field">
+              <label className="form-label">Time</label>
+              <input 
+                className="form-input" 
+                type="time" 
+                value={editForm.slot_time} 
+                onChange={e => setEditForm(f => ({ ...f, slot_time: e.target.value }))} 
+              />
+            </div>
+          </div>
+          <div className="form-field">
+            <label className="form-label">Notes (Optional)</label>
+            <textarea 
+              className="form-input" 
+              rows={3}
+              value={editForm.notes} 
+              onChange={e => setEditForm(f => ({ ...f, notes: e.target.value }))} 
+              placeholder="Add any special notes..."
+            />
+          </div>
+          <div className="flex gap-3 mt-4" style={{ marginTop: 16 }}>
+            <button className="btn btn-ghost flex-1" onClick={() => setShowEditModal(false)}>Cancel</button>
+            <button className="btn btn-gold flex-1" onClick={saveEdit}>
+              <Icon name="check" size={14} /> Save Changes
+            </button>
+          </div>
+        </Modal>
+      )}
 
       {/* Done today */}
       {done.length > 0 && (

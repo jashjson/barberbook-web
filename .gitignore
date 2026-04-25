@@ -14,3 +14,31 @@ dist/
 # System Files
 .DS_Store
 Thumbs.db
+.kiro/
+
+# Documentation (exclude all .md except README.md)
+*.md
+!README.md
+!**/README.md
+
+# Implementation and migration files
+*IMPLEMENTATION*.md
+*BUGFIX*.md
+*QUICK_START*.md
+*_migration_*.sql
+schema_migration_*.sql
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-*
+
+# Calculator (unwanted file)
+calculator.html

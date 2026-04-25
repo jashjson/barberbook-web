@@ -131,7 +131,7 @@ export function useOwnerDashboard(shopId) {
 }
 
 // ── BOOKING SLOTS: available time slots for a barber ─────────────────────────
-export function useAvailableSlots(barberId, date) {
+export function useAvailableSlots(barberId, date, shopHours = { opening: '09:00', closing: '19:00' }) {
   const [bookedSlots, setBooked] = useState([])
   const [loading, setLoading] = useState(false)
 
@@ -145,12 +145,32 @@ export function useAvailableSlots(barberId, date) {
       .finally(() => setLoading(false))
   }, [barberId, date])
 
-  // Generate slots from 9 AM to 7 PM, every 20 min
+  // Parse shop hours (default 9 AM to 7 PM)
+  const openHour = parseInt(shopHours.opening?.split(':')[0] || '9')
+  const closeHour = parseInt(shopHours.closing?.split(':')[0] || '19')
+
+  // Generate slots based on shop operating hours, every 20 min
   const allSlots = []
-  for (let h = 9; h < 19; h++) {
+  const now = new Date()
+  const selectedDate = new Date(date)
+  const isToday = format(selectedDate, 'yyyy-MM-dd') === format(now, 'yyyy-MM-dd')
+  
+  for (let h = openHour; h < closeHour; h++) {
     for (let m = 0; m < 60; m += 20) {
       const t = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`
-      allSlots.push({ time: t, booked: bookedSlots.includes(t) })
+      let isPast = false
+      
+      // Filter past times if selected date is today
+      if (isToday) {
+        const slotTime = new Date(selectedDate)
+        slotTime.setHours(h, m, 0, 0)
+        isPast = slotTime <= now
+      }
+      
+      allSlots.push({ 
+        time: t, 
+        booked: bookedSlots.includes(t) || isPast 
+      })
     }
   }
 

@@ -373,7 +373,13 @@ export function OwnerShop() {
   const { profile, signOut } = useAuth()
   const { toast } = useToast()
   const { shop, loading, refresh } = useOwnerShop(profile?.id)
-  const [form, setForm] = useState({ name: '', address: '', phone: '' })
+  const [form, setForm] = useState({ 
+    name: '', 
+    address: '', 
+    phone: '',
+    opening_time: '09:00',
+    closing_time: '19:00'
+  })
   const [saving, setSaving] = useState(false)
   const [services, setServices] = useState([
     { label: 'Haircut', price: 150, on: true },
@@ -384,18 +390,35 @@ export function OwnerShop() {
   ])
 
   useEffect(() => {
-    if (shop) setForm({ name: shop.name || '', address: shop.address || '', phone: shop.phone || '' })
+    if (shop) setForm({ 
+      name: shop.name || '', 
+      address: shop.address || '', 
+      phone: shop.phone || '',
+      opening_time: shop.opening_time?.substring(0, 5) || '09:00',
+      closing_time: shop.closing_time?.substring(0, 5) || '19:00'
+    })
   }, [shop])
 
   const saveShop = async () => {
     if (!form.name.trim()) { toast('Shop name is required', 'error'); return }
     setSaving(true)
+    const shopData = { 
+      name: form.name, 
+      address: form.address, 
+      phone: form.phone,
+      opening_time: form.opening_time + ':00',
+      closing_time: form.closing_time + ':00'
+    }
     if (shop) {
-      const { error } = await shopsApi.update(shop.id, { name: form.name, address: form.address, phone: form.phone })
+      const { error } = await shopsApi.update(shop.id, shopData)
       if (error) toast('Failed to save', 'error')
       else { toast('Shop updated!', 'success'); refresh() }
     } else {
-      const { error } = await shopsApi.create({ owner_id: profile.id, name: form.name, address: form.address, phone: form.phone, is_active: true })
+      const { error } = await shopsApi.create({ 
+        owner_id: profile.id, 
+        ...shopData,
+        is_active: true 
+      })
       if (error) toast('Failed to create shop', 'error')
       else { toast('Shop created!', 'success'); refresh() }
     }
@@ -415,18 +438,47 @@ export function OwnerShop() {
       <SectionHead title="Shop Information" />
       <div className="card card-pad mb-6" style={{ marginBottom: 20 }}>
         {[
-          { k: 'name',    l: 'Shop Name',    p: "Raja's Barber Shop",   i: 'store' },
-          { k: 'address', l: 'Address',       p: 'Anna Nagar, Chennai',  i: 'map' },
-          { k: 'phone',   l: 'Contact Phone', p: '+91 98765 43210',      i: 'phone' },
+          { k: 'name',    l: 'Shop Name',    p: "Raja's Barber Shop",   i: 'store', type: 'text' },
+          { k: 'address', l: 'Address',       p: 'Anna Nagar, Chennai',  i: 'map', type: 'text' },
+          { k: 'phone',   l: 'Contact Phone', p: '+91 98765 43210',      i: 'phone', type: 'text' },
         ].map(f => (
           <div key={f.k} className="form-field">
             <label className="form-label">{f.l}</label>
             <div className="input-group">
               <div className="input-icon"><Icon name={f.i} size={15} /></div>
-              <input className="form-input" placeholder={f.p} value={form[f.k]} onChange={e => setForm(ff => ({ ...ff, [f.k]: e.target.value }))} />
+              <input className="form-input" type={f.type} placeholder={f.p} value={form[f.k]} onChange={e => setForm(ff => ({ ...ff, [f.k]: e.target.value }))} />
             </div>
           </div>
         ))}
+        
+        <SectionHead title="Operating Hours" />
+        <div className="grid-2" style={{ gap: 12, marginBottom: 16 }}>
+          <div className="form-field">
+            <label className="form-label">Opening Time</label>
+            <div className="input-group">
+              <div className="input-icon"><Icon name="clock" size={15} /></div>
+              <input 
+                className="form-input" 
+                type="time" 
+                value={form.opening_time} 
+                onChange={e => setForm(ff => ({ ...ff, opening_time: e.target.value }))} 
+              />
+            </div>
+          </div>
+          <div className="form-field">
+            <label className="form-label">Closing Time</label>
+            <div className="input-group">
+              <div className="input-icon"><Icon name="clock" size={15} /></div>
+              <input 
+                className="form-input" 
+                type="time" 
+                value={form.closing_time} 
+                onChange={e => setForm(ff => ({ ...ff, closing_time: e.target.value }))} 
+              />
+            </div>
+          </div>
+        </div>
+        
         <button className="btn btn-gold" onClick={saveShop} disabled={saving}>
           {saving ? <Spinner /> : <Icon name="check" size={14} />}
           {saving ? 'Saving…' : shop ? 'Save Changes' : 'Create Shop'}
