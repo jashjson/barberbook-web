@@ -101,14 +101,14 @@ export const shopBarbers = {
   // Get all barber links for a shop (owner view)
   getByShop: (shopId) =>
     supabase.from('shop_barbers')
-      .select('*, profiles(id, name, email, phone, avatar_url)')
+      .select('*, profiles!shop_barbers_barber_id_fkey(id, name, email, phone, avatar_url)')
       .eq('shop_id', shopId)
       .order('created_at', { ascending: false }),
 
   // Get active barbers for a shop (public/booking view)
   getActiveByShop: (shopId) =>
     supabase.from('shop_barbers')
-      .select('*, profiles(id, name, email, phone, avatar_url)')
+      .select('*, profiles!shop_barbers_barber_id_fkey(id, name, email, phone, avatar_url)')
       .eq('shop_id', shopId)
       .eq('status', 'active')
       .order('created_at'),
@@ -130,24 +130,65 @@ export const shopBarbers = {
 
   // Owner invites a barber by email
   inviteBarber: async (shopId, barberEmail, ownerId) => {
-    // First, find the barber profile by email
-    const { data: barberProfile, error: profileError } = await supabase
+    const email = barberEmail.toLowerCase().trim()
+    
+    // First, find the barber profile by email (without role filter to check if user exists)
+    const { data: userProfile, error: profileError } = await supabase
       .from('profiles')
-      .select('id, role')
-      .eq('email', barberEmail.toLowerCase().trim())
-      .eq('role', 'barber')
+      .select('id, role, name, email')
+      .eq('email', email)
       .maybeSingle()
 
-    if (profileError) return { error: profileError }
-    if (!barberProfile) return { error: { message: 'No barber account found with this email. Ask them to sign up first.' } }
+    console.log('Invite barber - profile lookup:', { email, userProfile, profileError })
+
+    if (profileError) {
+      console.error('Profile lookup error:', profileError)
+      return { error: profileError }
+    }
+    
+    if (!userProfile) {
+      return { error: { message: 'No account found with this email. Ask them to sign up first.' } }
+    }
+    
+    if (userProfile.role !== 'barber') {
+      return { error: { message: `This user is registered as a ${userProfile.role}, not a barber. Only barber accounts can be invited.` } }
+    }
+
+    // Check if already invited or linked
+    const { data: existingLink } = await supabase
+      .from('shop_barbers')
+      .select('id, status')
+      .eq('shop_id', shopId)
+      .eq('barber_id', userProfile.id)
+      .maybeSingle()
+
+    if (existingLink) {
+      if (existingLink.status === 'pending') {
+        return { error: { message: 'This barber already has a pending invite.' } }
+      } else if (existingLink.status === 'active') {
+        return { error: { message: 'This barber is already working at your shop.' } }
+      }
+    }
 
     // Create the shop_barbers link
-    return supabase.from('shop_barbers').insert({
+    const result = await supabase.from('shop_barbers').insert({
       shop_id: shopId,
-      barber_id: barberProfile.id,
+      barber_id: userProfile.id,
       status: 'pending',
       invited_by: ownerId,
-    }).select('*, profiles(name, email)').single()
+    }).select('*').single()
+
+    console.log('Invite barber - insert result:', result)
+    
+    // If successful, return with the barber profile data we already have
+    if (result.data) {
+      result.data.profiles = {
+        name: userProfile.name,
+        email: userProfile.email
+      }
+    }
+    
+    return result
   },
 
   // Barber accepts an invite

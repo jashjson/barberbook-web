@@ -49,7 +49,26 @@ export function BarberQueue() {
 
   const saveEdit = async () => {
     if (!editingBooking) return
+    
+    // Validate new date/time
     const newSlotTime = `${editForm.slot_date}T${editForm.slot_time}:00`
+    const newDateTime = new Date(newSlotTime)
+    const now = new Date()
+    const maxDate = new Date()
+    maxDate.setDate(maxDate.getDate() + 14)
+    
+    // Check if new time is in the past
+    if (newDateTime <= now) {
+      toast('Cannot reschedule to a past time', 'error')
+      return
+    }
+    
+    // Check if new time is beyond 14 days
+    if (newDateTime > maxDate) {
+      toast('Cannot reschedule beyond 14 days', 'error')
+      return
+    }
+    
     const { error } = await bookingsApi.update(editingBooking.id, {
       slot_time: newSlotTime,
       service: editForm.service,
@@ -181,6 +200,7 @@ export function BarberQueue() {
                 type="date" 
                 value={editForm.slot_date} 
                 min={format(new Date(), 'yyyy-MM-dd')}
+                max={format(new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd')}
                 onChange={e => setEditForm(f => ({ ...f, slot_date: e.target.value }))} 
               />
             </div>

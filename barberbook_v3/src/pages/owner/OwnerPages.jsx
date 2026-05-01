@@ -403,24 +403,36 @@ export function OwnerShop() {
     if (!form.name.trim()) { toast('Shop name is required', 'error'); return }
     setSaving(true)
     const shopData = { 
-      name: form.name, 
-      address: form.address, 
-      phone: form.phone,
+      name: form.name.trim(), 
+      address: form.address.trim(), 
+      phone: form.phone.trim(),
       opening_time: form.opening_time + ':00',
       closing_time: form.closing_time + ':00'
     }
     if (shop) {
-      const { error } = await shopsApi.update(shop.id, shopData)
-      if (error) toast('Failed to save', 'error')
-      else { toast('Shop updated!', 'success'); refresh() }
+      const { data, error } = await shopsApi.update(shop.id, shopData)
+      if (error) {
+        console.error('Shop update error:', error)
+        toast(error.message || 'Failed to save', 'error')
+      } else { 
+        console.log('Shop updated successfully:', data)
+        toast('Shop updated!', 'success')
+        refresh() 
+      }
     } else {
-      const { error } = await shopsApi.create({ 
+      const { data, error } = await shopsApi.create({ 
         owner_id: profile.id, 
         ...shopData,
         is_active: true 
       })
-      if (error) toast('Failed to create shop', 'error')
-      else { toast('Shop created!', 'success'); refresh() }
+      if (error) {
+        console.error('Shop create error:', error)
+        toast(error.message || 'Failed to create shop', 'error')
+      } else { 
+        console.log('Shop created successfully:', data)
+        toast('Shop created!', 'success')
+        refresh() 
+      }
     }
     setSaving(false)
   }
@@ -500,18 +512,6 @@ export function OwnerShop() {
             ))}
           </div>
 
-          <SectionHead title="Plan & Billing" />
-          <div className="card card-gold-border card-pad" style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 6, fontWeight: 700 }}>Current Plan</div>
-            <div style={{ fontFamily: 'Bebas Neue', fontSize: 40, color: 'var(--gold)', marginBottom: 4 }}>FREE</div>
-            <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 20, lineHeight: 1.5 }}>
-              30 bookings / month<br/>6 remaining this month
-            </div>
-            <button className="btn btn-gold btn-full btn-lg" onClick={() => window.open('mailto:hello@barberbook.in?subject=Upgrade%20Plan', '_blank')}>
-              Upgrade to Standard — ₹299/month
-            </button>
-            <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 10 }}>Unlimited bookings · Analytics · Priority listing</div>
-          </div>
         </>
       )}
 

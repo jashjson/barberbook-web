@@ -35,7 +35,7 @@ export function useCustomerBooking(userId, shopId) {
 
       // Subscribe to real-time updates
       const targetShopId = booking?.shop_id || shopId
-      if (targetShopId) {
+      if (targetShopId && !channelRef.current) {
         channelRef.current = realtime.subscribeShopQueue(targetShopId, () => {
           fetchActive()
           fetchQueue(targetShopId)
@@ -44,7 +44,12 @@ export function useCustomerBooking(userId, shopId) {
     }
 
     init()
-    return () => { if (channelRef.current) realtime.unsubscribe(channelRef.current) }
+    return () => { 
+      if (channelRef.current) {
+        realtime.unsubscribe(channelRef.current)
+        channelRef.current = null
+      }
+    }
   }, [userId, shopId, fetchActive, fetchQueue])
 
   const myPosition = activeBooking
@@ -72,8 +77,15 @@ export function useBarberQueue(barberId) {
     if (!barberId) { setLoading(false); return }
     fetch().finally(() => setLoading(false))
 
-    channelRef.current = realtime.subscribeBarberQueue(barberId, () => fetch())
-    return () => { if (channelRef.current) realtime.unsubscribe(channelRef.current) }
+    if (!channelRef.current) {
+      channelRef.current = realtime.subscribeBarberQueue(barberId, () => fetch())
+    }
+    return () => { 
+      if (channelRef.current) {
+        realtime.unsubscribe(channelRef.current)
+        channelRef.current = null
+      }
+    }
   }, [barberId, fetch])
 
   const current = queue.find(q => q.status === 'in_chair')
@@ -106,11 +118,18 @@ export function useOwnerDashboard(shopId) {
     if (!shopId) { setLoading(false); return }
     Promise.all([fetchQueue(), fetchRevenue()]).finally(() => setLoading(false))
 
-    channelRef.current = realtime.subscribeShopQueue(shopId, () => {
-      fetchQueue()
-      fetchRevenue()
-    })
-    return () => { if (channelRef.current) realtime.unsubscribe(channelRef.current) }
+    if (!channelRef.current) {
+      channelRef.current = realtime.subscribeShopQueue(shopId, () => {
+        fetchQueue()
+        fetchRevenue()
+      })
+    }
+    return () => { 
+      if (channelRef.current) {
+        realtime.unsubscribe(channelRef.current)
+        channelRef.current = null
+      }
+    }
   }, [shopId, fetchQueue, fetchRevenue])
 
   // Aggregate stats
@@ -145,25 +164,53 @@ export function useAvailableSlots(barberId, date, shopHours = { opening: '09:00'
       .finally(() => setLoading(false))
   }, [barberId, date])
 
-  // Parse shop hours (default 9 AM to 7 PM)
-  const openHour = parseInt(shopHours.opening?.split(':')[0] || '9')
-  const closeHour = parseInt(shopHours.closing?.split(':')[0] || '19')
+  // Parse shop hours with validation (default 9 AM to 7 PM)
+  const parseHour = (timeStr, defaultHour) => {
+    if (!timeStr) return defaultHour
+    const hour = parseInt(timeStr.split(':')[0])
+    return isNaN(hour) ? defaultHour : hour
+  }
+  
+  const parseMinute = (timeStr) => {
+    if (!timeStr) return 0
+    const parts = timeStr.split(':')
+    if (parts.length < 2) return 0
+    const minute = parseInt(parts[1])
+    return isNaN(minute) ? 0 : minute
+  }
+
+  const openHour = parseHour(shopHours.opening, 9)
+  const openMinute = parseMinute(shopHours.opening)
+  const closeHour = parseHour(shopHours.closing, 19)
+  const closeMinute = parseMinute(shopHours.closing)
 
   // Generate slots based on shop operating hours, every 20 min
   const allSlots = []
   const now = new Date()
-  const selectedDate = new Date(date)
-  const isToday = format(selectedDate, 'yyyy-MM-dd') === format(now, 'yyyy-MM-dd')
   
-  for (let h = openHour; h < closeHour; h++) {
-    for (let m = 0; m < 60; m += 20) {
+  // Fix: Use date string directly to avoid timezone issues
+  const isToday = date === format(now, 'yyyy-MM-dd')
+  
+  // Start from opening time (rounded to next 20-min interval if needed)
+  let startHour = openHour
+  let startMinute = Math.ceil(openMinute / 20) * 20
+  if (startMinute >= 60) {
+    startHour++
+    startMinute = 0
+  }
+  
+  for (let h = startHour; h < closeHour || (h === closeHour && closeMinute > 0); h++) {
+    const startM = (h === startHour) ? startMinute : 0
+    const endM = (h === closeHour) ? closeMinute : 60
+    
+    for (let m = startM; m < endM; m += 20) {
       const t = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`
       let isPast = false
       
       // Filter past times if selected date is today
       if (isToday) {
-        const slotTime = new Date(selectedDate)
-        slotTime.setHours(h, m, 0, 0)
+        // Create date object in local timezone
+        const slotTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0, 0)
         isPast = slotTime <= now
       }
       
