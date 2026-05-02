@@ -252,6 +252,15 @@ export function useAvailableSlots(barberProfileId, date, shopHours = { opening: 
   const closeHour = parseHour(shopHours.closing, 19)
   const closeMinute = parseMinute(shopHours.closing)
 
+  console.log('[useAvailableSlots] Shop hours:', {
+    opening: shopHours.opening,
+    closing: shopHours.closing,
+    openHour,
+    openMinute,
+    closeHour,
+    closeMinute
+  })
+
   // Generate slots based on shop operating hours, every 20 min
   const allSlots = []
   const now = new Date()
@@ -288,6 +297,14 @@ export function useAvailableSlots(barberProfileId, date, shopHours = { opening: 
       })
     }
   }
+
+  console.log('[useAvailableSlots] Generated slots:', {
+    totalSlots: allSlots.length,
+    availableSlots: allSlots.filter(s => !s.booked).length,
+    bookedSlots: bookedSlots.length,
+    isToday,
+    date
+  })
 
   return { slots: allSlots, loading }
 }

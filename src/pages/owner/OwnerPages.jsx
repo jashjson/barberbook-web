@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { useOwnerDashboard } from '../../hooks/useQueue'
-import { shops as shopsApi, barbers as barbersApi, shopBarbers as shopBarbersApi } from '../../lib/supabase'
+import { shops as shopsApi, barbers as barbersApi, shopBarbers as shopBarbersApi, bookings as bookingsApi } from '../../lib/supabase'
 import { format } from 'date-fns'
 import Icon from '../../components/ui/Icon'
 import { Spinner, Empty, SectionHead, StatusBadge, Toggle, Modal } from '../../components/ui/Primitives'
@@ -125,17 +125,43 @@ export function OwnerDashboard() {
 export function OwnerBookings() {
   const { profile } = useAuth()
   const { shop } = useOwnerShop(profile?.id)
-  const { queue, loading } = useOwnerDashboard(shop?.id)
+  const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'))
+  const [queue, setQueue] = useState([])
+  const [loading, setLoading] = useState(false)
   const [filter, setFilter] = useState('all')
+
+  // Fetch bookings for selected date
+  useEffect(() => {
+    if (!shop?.id) return
+    setLoading(true)
+    bookingsApi.getShopQueue(shop.id, selectedDate)
+      .then(({ data }) => setQueue(data || []))
+      .finally(() => setLoading(false))
+  }, [shop?.id, selectedDate])
 
   const filters = ['all', 'waiting', 'in_chair', 'done', 'cancelled']
   const filtered = filter === 'all' ? queue : queue.filter(q => q.status === filter)
   const totalFiltered = filtered.reduce((s, q) => s + (q.price || 0), 0)
+  
+  const isToday = selectedDate === format(new Date(), 'yyyy-MM-dd')
 
   if (loading) return <div className="page-inner"><Spinner page /></div>
 
   return (
     <div className="page-inner">
+      {/* Date Selector */}
+      <div className="form-field mb-4" style={{ marginBottom: 20 }}>
+        <label className="form-label">Select Date</label>
+        <input 
+          type="date" 
+          className="form-input" 
+          value={selectedDate}
+          min={format(new Date(), 'yyyy-MM-dd')}
+          max={format(new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd')}
+          onChange={e => setSelectedDate(e.target.value)}
+        />
+      </div>
+
       <div className="flex items-center gap-2 mb-6" style={{ flexWrap: 'wrap' }}>
         {filters.map(f => (
           <button key={f} className={`btn btn-sm ${filter === f ? 'btn-gold' : 'btn-ghost'}`} onClick={() => setFilter(f)}>
@@ -149,7 +175,7 @@ export function OwnerBookings() {
 
       <div className="card">
         {filtered.length === 0 ? (
-          <Empty icon="📋" title="No bookings found" />
+          <Empty icon="📋" title="No bookings found" sub={`No bookings for ${format(new Date(selectedDate), 'd MMM yyyy')}`} />
         ) : filtered.map(q => (
           <div key={q.id} className="q-item">
             <div className={`q-token ${q.status === 'in_chair' ? 'active' : q.status === 'done' ? 'gold' : ''}`}>
