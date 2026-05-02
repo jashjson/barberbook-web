@@ -21,11 +21,30 @@ function useBarberProfile(profileId) {
 export function BarberQueue() {
   const { profile } = useAuth()
   const { toast } = useToast()
-  const { barber } = useBarberProfile(profile?.id)
-  const { queue, current, waiting, done, loading, refresh } = useBarberQueue(barber?.id)
+  const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'))
+  const [queue, setQueue] = useState([])
+  const [loading, setLoading] = useState(false)
+  const { barber, loading: barberLoading } = useBarberProfile(profile?.id)
   const [editingBooking, setEditingBooking] = useState(null)
   const [showEditModal, setShowEditModal] = useState(false)
   const [editForm, setEditForm] = useState({ slot_time: '', service: '', notes: '' })
+
+  // Fetch bookings for selected date
+  useEffect(() => {
+    if (!profile?.id) return
+    setLoading(true)
+    bookingsApi.getBarberQueueByProfile(profile.id, selectedDate)
+      .then(({ data }) => setQueue(data || []))
+      .finally(() => setLoading(false))
+  }, [profile?.id, selectedDate])
+
+  const refresh = () => {
+    if (!profile?.id) return
+    setLoading(true)
+    bookingsApi.getBarberQueueByProfile(profile.id, selectedDate)
+      .then(({ data }) => setQueue(data || []))
+      .finally(() => setLoading(false))
+  }
 
   const updateStatus = async (id, status) => {
     const { error } = await bookingsApi.updateStatus(id, status)
@@ -92,8 +111,14 @@ export function BarberQueue() {
     }
   }
 
-  if (loading) return <div className="page-inner"><Spinner page /></div>
-  if (!barber) return (
+  const current = queue.find(q => q.status === 'in_chair')
+  const waiting = queue.filter(q => q.status === 'waiting')
+  const done = queue.filter(q => q.status === 'done')
+  
+  const isToday = selectedDate === format(new Date(), 'yyyy-MM-dd')
+
+  if (loading || barberLoading) return <div className="page-inner"><Spinner page /></div>
+  if (!barber && !barberLoading) return (
     <div className="page-inner">
       <Empty icon="✂" title="Not set up as barber" sub="Your profile isn't linked to a barbershop yet. Contact your shop owner." />
     </div>
@@ -101,19 +126,32 @@ export function BarberQueue() {
 
   return (
     <div className="page-inner">
+      {/* Date Selector */}
+      <div className="form-field mb-4" style={{ marginBottom: 20 }}>
+        <label className="form-label">Select Date</label>
+        <input 
+          type="date" 
+          className="form-input" 
+          value={selectedDate}
+          min={format(new Date(), 'yyyy-MM-dd')}
+          max={format(new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd')}
+          onChange={e => setSelectedDate(e.target.value)}
+        />
+      </div>
+
       {/* Stats */}
       <div className="stat-grid">
-        <div className="card stat-card card-pad"><div className="stat-val">{queue.length}</div><div className="stat-label">Total Today</div></div>
+        <div className="card stat-card card-pad"><div className="stat-val">{queue.length}</div><div className="stat-label">{isToday ? 'Total Today' : 'Total'}</div></div>
         <div className="card stat-card card-pad"><div className="stat-val">{done.length}</div><div className="stat-label">Done</div></div>
         <div className="card stat-card card-pad"><div className="stat-val">{waiting.length}</div><div className="stat-label">Waiting</div></div>
         <div className="card stat-card card-pad">
           <div className="stat-val">₹{done.reduce((s,q) => s+(q.price||0), 0).toLocaleString()}</div>
-          <div className="stat-label">Earned Today</div>
+          <div className="stat-label">{isToday ? 'Earned Today' : 'Earned'}</div>
         </div>
       </div>
 
       {/* In Chair */}
-      {current && (
+      {isToday && current && (
         <>
           <SectionHead title="In Chair Now" />
           <div className="card" style={{ borderColor: 'rgba(224,86,86,0.25)', background: 'rgba(224,86,86,0.02)', marginBottom: 16 }}>
@@ -146,12 +184,12 @@ export function BarberQueue() {
 
       {/* Waiting */}
       <SectionHead
-        title={`Waiting Queue`}
-        action={<div className="live-indicator"><div className="live-dot"/>LIVE · {waiting.length} left</div>}
+        title={isToday ? `Waiting Queue` : `Scheduled Appointments`}
+        action={isToday ? <div className="live-indicator"><div className="live-dot"/>LIVE · {waiting.length} left</div> : null}
       />
       <div className="card">
         {waiting.length === 0 ? (
-          <Empty icon="🎉" title="Queue is empty" sub="No one waiting. Enjoy the break!" />
+          <Empty icon="🎉" title={isToday ? "Queue is empty" : "No appointments"} sub={isToday ? "No one waiting. Enjoy the break!" : `No appointments scheduled for ${format(new Date(selectedDate), 'd MMM yyyy')}`} />
         ) : waiting.map((q, i) => (
           <div key={q.id} className="q-item">
             <div className={`q-token ${i === 0 ? 'gold' : ''}`}>{String(q.token_no).padStart(2, '0')}</div>
@@ -160,7 +198,7 @@ export function BarberQueue() {
               <div className="q-sub">{q.service} · {q.slot_time ? format(new Date(q.slot_time), 'h:mm a') : ''}</div>
             </div>
             <div className="flex gap-2">
-              {i === 0 && !current && (
+              {isToday && i === 0 && !current && (
                 <button className="btn btn-gold btn-sm" onClick={() => updateStatus(q.id, 'in_chair')}>
                   Call Next
                 </button>
@@ -171,7 +209,7 @@ export function BarberQueue() {
               <button className="btn btn-ghost btn-sm" style={{ color: 'var(--red)' }} onClick={() => cancelBooking(q.id, q.profiles?.name || 'Customer')}>
                 <Icon name="x" size={13} />
               </button>
-              <span className="badge badge-amber">#{i + 1}</span>
+              {isToday && <span className="badge badge-amber">#{i + 1}</span>}
             </div>
           </div>
         ))}
@@ -236,7 +274,7 @@ export function BarberQueue() {
       {/* Done today */}
       {done.length > 0 && (
         <>
-          <SectionHead title={`Completed Today (${done.length})`} />
+          <SectionHead title={`Completed ${isToday ? 'Today' : ''} (${done.length})`} />
           <div className="card">
             {done.map(q => (
               <div key={q.id} className="q-item" style={{ opacity: 0.6 }}>
@@ -260,8 +298,19 @@ export function BarberSchedule() {
   const { profile } = useAuth()
   const { toast } = useToast()
   const { barber, refresh } = useBarberProfile(profile?.id)
-  const { queue } = useBarberQueue(barber?.id)
+  const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'))
+  const [bookings, setBookings] = useState([])
+  const [loading, setLoading] = useState(false)
   const [avail, setAvail] = useState({ bookings: true, walkIns: true, onBreak: false })
+
+  // Fetch bookings for selected date
+  useEffect(() => {
+    if (!profile?.id) return
+    setLoading(true)
+    bookingsApi.getBarberQueueByProfile(profile.id, selectedDate)
+      .then(({ data }) => setBookings(data || []))
+      .finally(() => setLoading(false))
+  }, [profile?.id, selectedDate])
 
   const toggleAvail = async (key) => {
     const next = { ...avail, [key]: !avail[key] }
@@ -273,14 +322,32 @@ export function BarberSchedule() {
   }
 
   const statusMap = { done: 'badge-muted', in_chair: 'badge-red', waiting: 'badge-amber', cancelled: 'badge-muted' }
+  
+  const isToday = selectedDate === format(new Date(), 'yyyy-MM-dd')
+  const isFuture = new Date(selectedDate) > new Date()
 
   return (
     <div className="page-inner">
-      <SectionHead title="Today's Schedule" />
+      {/* Date Selector */}
+      <div className="form-field mb-4" style={{ marginBottom: 20 }}>
+        <label className="form-label">Select Date</label>
+        <input 
+          type="date" 
+          className="form-input" 
+          value={selectedDate}
+          min={format(new Date(), 'yyyy-MM-dd')}
+          max={format(new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd')}
+          onChange={e => setSelectedDate(e.target.value)}
+        />
+      </div>
+
+      <SectionHead title={isToday ? "Today's Schedule" : isFuture ? "Upcoming Schedule" : "Past Schedule"} />
       <div className="card mb-6" style={{ marginBottom: 20 }}>
-        {queue.length === 0 ? (
-          <Empty icon="📅" title="No bookings today" sub="Your schedule is clear." />
-        ) : queue.map(q => (
+        {loading ? (
+          <Spinner />
+        ) : bookings.length === 0 ? (
+          <Empty icon="📅" title="No bookings" sub={`No appointments scheduled for ${format(new Date(selectedDate), 'd MMM yyyy')}`} />
+        ) : bookings.map(q => (
           <div key={q.id} className="q-item">
             <div style={{ fontSize: 12, color: 'var(--text-tertiary)', width: 48, flexShrink: 0 }}>
               {q.slot_time ? format(new Date(q.slot_time), 'h:mm a') : '—'}
@@ -323,7 +390,7 @@ export function BarberSchedule() {
 export function BarberEarnings() {
   const { profile } = useAuth()
   const { barber } = useBarberProfile(profile?.id)
-  const { done } = useBarberQueue(barber?.id)
+  const { done } = useBarberQueue(profile?.id) // Use profile ID directly
   const [weekData, setWeekData] = useState([])
 
   useEffect(() => {

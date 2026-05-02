@@ -62,31 +62,74 @@ export function useCustomerBooking(userId, shopId) {
 }
 
 // ── BARBER: today's full queue ────────────────────────────────────────────────
-export function useBarberQueue(barberId) {
+// Updated to use barber profile ID instead of barber record ID
+export function useBarberQueue(barberProfileId) {
   const [queue, setQueue] = useState([])
   const [loading, setLoading] = useState(true)
   const channelRef = useRef(null)
 
   const fetch = useCallback(async () => {
-    if (!barberId) return
-    const { data, error } = await bookingsApi.getBarberQueue(barberId, today())
-    if (!error) setQueue(data || [])
-  }, [barberId])
+    if (!barberProfileId) {
+      console.log('[useBarberQueue] No barberProfileId provided')
+      return
+    }
+    
+    console.log('[useBarberQueue] Fetching queue for profile ID:', barberProfileId)
+    
+    try {
+      const { data, error } = await bookingsApi.getBarberQueueByProfile(barberProfileId, today())
+      
+      console.log('[useBarberQueue] Response:', { 
+        dataCount: data?.length || 0, 
+        error: error?.message || error,
+        data: data 
+      })
+      
+      if (error) {
+        console.error('[useBarberQueue] Error fetching barber queue:', error)
+      }
+      
+      // Set queue data even if there's an error (fallback will return empty array)
+      setQueue(data || [])
+    } catch (err) {
+      console.error('[useBarberQueue] Exception:', err)
+      setQueue([])
+    }
+  }, [barberProfileId])
 
   useEffect(() => {
-    if (!barberId) { setLoading(false); return }
-    fetch().finally(() => setLoading(false))
+    if (!barberProfileId) { 
+      console.log('[useBarberQueue] Effect: No barberProfileId, setting loading false')
+      setLoading(false)
+      return 
+    }
+    
+    console.log('[useBarberQueue] Effect: Starting fetch for', barberProfileId)
+    fetch().finally(() => {
+      console.log('[useBarberQueue] Effect: Fetch complete, setting loading false')
+      setLoading(false)
+    })
 
+    // Subscribe to real-time updates using profile ID
     if (!channelRef.current) {
-      channelRef.current = realtime.subscribeBarberQueue(barberId, () => fetch())
+      try {
+        console.log('[useBarberQueue] Subscribing to real-time updates for', barberProfileId)
+        channelRef.current = realtime.subscribeBarberQueueByProfile(barberProfileId, () => {
+          console.log('[useBarberQueue] Real-time update received, refreshing...')
+          fetch()
+        })
+      } catch (err) {
+        console.error('[useBarberQueue] Error subscribing to barber queue:', err)
+      }
     }
     return () => { 
       if (channelRef.current) {
+        console.log('[useBarberQueue] Unsubscribing from real-time updates')
         realtime.unsubscribe(channelRef.current)
         channelRef.current = null
       }
     }
-  }, [barberId, fetch])
+  }, [barberProfileId, fetch])
 
   const current = queue.find(q => q.status === 'in_chair')
   const waiting = queue.filter(q => q.status === 'waiting')
@@ -150,19 +193,44 @@ export function useOwnerDashboard(shopId) {
 }
 
 // ── BOOKING SLOTS: available time slots for a barber ─────────────────────────
-export function useAvailableSlots(barberId, date, shopHours = { opening: '09:00', closing: '19:00' }) {
+// Updated to use barber profile ID instead of barber record ID
+export function useAvailableSlots(barberProfileId, date, shopHours = { opening: '09:00', closing: '19:00' }) {
   const [bookedSlots, setBooked] = useState([])
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    if (!barberId || !date) return
+    // Reset state if no barber or date
+    if (!barberProfileId || !date) {
+      setBooked([])
+      setLoading(false)
+      return
+    }
+    
     setLoading(true)
-    bookingsApi.getBookedSlots(barberId, date)
-      .then(({ data }) => {
-        setBooked((data || []).map(b => b.slot_time?.substring(11, 16)))
+    
+    // Use profile-based method for new schema with error handling
+    bookingsApi.getBookedSlotsByProfile(barberProfileId, date)
+      .then(({ data, error }) => {
+        if (error) {
+          console.error('Error fetching booked slots:', error)
+          // If column doesn't exist, return empty array
+          if (error.message?.includes('barber_profile_id')) {
+            console.warn('barber_profile_id column not found, returning empty slots')
+          }
+          setBooked([])
+          return
+        }
+        const slots = (data || []).map(b => b.slot_time?.substring(11, 16))
+        setBooked(slots)
       })
-      .finally(() => setLoading(false))
-  }, [barberId, date])
+      .catch(err => {
+        console.error('Exception in useAvailableSlots:', err)
+        setBooked([])
+      })
+      .finally(() => {
+        setLoading(false)
+      })
+  }, [barberProfileId, date])
 
   // Parse shop hours with validation (default 9 AM to 7 PM)
   const parseHour = (timeStr, defaultHour) => {

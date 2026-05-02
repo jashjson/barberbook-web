@@ -226,16 +226,125 @@ export const shopBarbers = {
 export const bookings = {
   getBarberQueue: (barberId, date) =>
     supabase.from('bookings')
-      .select('*, profiles(name, phone, avatar_url)')
+      .select('*, profiles!bookings_user_id_fkey(name, phone, avatar_url)')
       .eq('barber_id', barberId)
       .gte('slot_time', `${date}T00:00:00`)
       .lte('slot_time', `${date}T23:59:59`)
       .neq('status', 'cancelled')
       .order('token_no', { ascending: true }),
 
+  // NEW: Get barber queue by profile ID (for new schema)
+  // Falls back to old schema if barber_profile_id column doesn't exist
+  getBarberQueueByProfile: async (barberProfileId, date) => {
+    console.log('[getBarberQueueByProfile] Starting query for profile:', barberProfileId)
+    
+    // First, try the new schema with barber_profile_id
+    // Specify the foreign key relationship explicitly to avoid ambiguity
+    const newSchemaQuery = await supabase.from('bookings')
+      .select('*, profiles!bookings_user_id_fkey(name, phone, avatar_url)')
+      .eq('barber_profile_id', barberProfileId)
+      .gte('slot_time', `${date}T00:00:00`)
+      .lte('slot_time', `${date}T23:59:59`)
+      .neq('status', 'cancelled')
+      .order('token_no', { ascending: true })
+    
+    console.log('[getBarberQueueByProfile] New schema query result:', {
+      error: newSchemaQuery.error,
+      dataCount: newSchemaQuery.data?.length || 0
+    })
+    
+    // If new schema returns no results, also try the fallback (old schema)
+    // This handles the case where barber_profile_id column exists but has no data
+    if (!newSchemaQuery.error && newSchemaQuery.data && newSchemaQuery.data.length === 0) {
+      console.log('[getBarberQueueByProfile] New schema returned 0 results, trying fallback as well')
+      
+      // Find barber record(s) for this profile
+      const { data: barberRecords, error: barberError } = await supabase
+        .from('barbers')
+        .select('id')
+        .eq('profile_id', barberProfileId)
+      
+      console.log('[getBarberQueueByProfile] Barber records lookup:', {
+        error: barberError,
+        recordCount: barberRecords?.length || 0,
+        records: barberRecords
+      })
+      
+      if (!barberError && barberRecords && barberRecords.length > 0) {
+        // Get bookings for all barber records
+        const barberIds = barberRecords.map(b => b.id)
+        console.log('[getBarberQueueByProfile] Querying bookings for barber IDs:', barberIds)
+        
+        const fallbackQuery = await supabase.from('bookings')
+          .select('*, profiles!bookings_user_id_fkey(name, phone, avatar_url)')
+          .in('barber_id', barberIds)
+          .gte('slot_time', `${date}T00:00:00`)
+          .lte('slot_time', `${date}T23:59:59`)
+          .neq('status', 'cancelled')
+          .order('token_no', { ascending: true })
+        
+        console.log('[getBarberQueueByProfile] Fallback query result:', {
+          error: fallbackQuery.error,
+          dataCount: fallbackQuery.data?.length || 0,
+          data: fallbackQuery.data
+        })
+        
+        // Return fallback results if they exist
+        if (!fallbackQuery.error && fallbackQuery.data && fallbackQuery.data.length > 0) {
+          console.log('[getBarberQueueByProfile] Using fallback results')
+          return fallbackQuery
+        }
+      }
+    }
+    
+    // If there was an error with new schema, try fallback
+    if (newSchemaQuery.error) {
+      console.warn('[getBarberQueueByProfile] New schema failed, trying fallback. Error:', newSchemaQuery.error.message)
+      
+      // Find barber record(s) for this profile
+      const { data: barberRecords, error: barberError } = await supabase
+        .from('barbers')
+        .select('id')
+        .eq('profile_id', barberProfileId)
+      
+      console.log('[getBarberQueueByProfile] Barber records lookup:', {
+        error: barberError,
+        recordCount: barberRecords?.length || 0,
+        records: barberRecords
+      })
+      
+      if (barberError || !barberRecords || barberRecords.length === 0) {
+        console.warn('[getBarberQueueByProfile] No barber records found for profile', barberProfileId)
+        return { data: [], error: null }
+      }
+      
+      // Get bookings for all barber records
+      const barberIds = barberRecords.map(b => b.id)
+      console.log('[getBarberQueueByProfile] Querying bookings for barber IDs:', barberIds)
+      
+      const fallbackQuery = await supabase.from('bookings')
+        .select('*, profiles!bookings_user_id_fkey(name, phone, avatar_url)')
+        .in('barber_id', barberIds)
+        .gte('slot_time', `${date}T00:00:00`)
+        .lte('slot_time', `${date}T23:59:59`)
+        .neq('status', 'cancelled')
+        .order('token_no', { ascending: true })
+      
+      console.log('[getBarberQueueByProfile] Fallback query result:', {
+        error: fallbackQuery.error,
+        dataCount: fallbackQuery.data?.length || 0,
+        data: fallbackQuery.data
+      })
+      
+      return fallbackQuery
+    }
+    
+    return newSchemaQuery
+  },
+
   getShopQueue: (shopId, date) =>
     supabase.from('bookings')
-      .select('*, profiles(name, phone, avatar_url), barbers(name)')
+      .select('*, profiles!bookings_user_id_fkey(name, phone, avatar_url), barbers(name)')
       .eq('shop_id', shopId)
       .gte('slot_time', `${date}T00:00:00`)
       .lte('slot_time', `${date}T23:59:59`)
@@ -289,6 +398,44 @@ export const bookings = {
       .gte('slot_time', `${date}T00:00:00`)
       .lte('slot_time', `${date}T23:59:59`)
       .neq('status', 'cancelled'),
+
+  // NEW: Get booked slots by profile ID
+  // Falls back to old schema if barber_profile_id column doesn't exist
+  getBookedSlotsByProfile: async (barberProfileId, date) => {
+    // First, try the new schema with barber_profile_id
+    const newSchemaQuery = await supabase.from('bookings')
+      .select('slot_time')
+      .eq('barber_profile_id', barberProfileId)
+      .gte('slot_time', `${date}T00:00:00`)
+      .lte('slot_time', `${date}T23:59:59`)
+      .neq('status', 'cancelled')
+    
+    // If the column doesn't exist, fall back to old schema
+    if (newSchemaQuery.error && newSchemaQuery.error.message?.includes('barber_profile_id')) {
+      console.warn('[getBookedSlotsByProfile] barber_profile_id column not found, using fallback')
+      
+      // Find barber record(s) for this profile
+      const { data: barberRecords } = await supabase
+        .from('barbers')
+        .select('id')
+        .eq('profile_id', barberProfileId)
+      
+      if (!barberRecords || barberRecords.length === 0) {
+        return { data: [], error: null }
+      }
+      
+      // Get bookings for all barber records
+      const barberIds = barberRecords.map(b => b.id)
+      return supabase.from('bookings')
+        .select('slot_time')
+        .in('barber_id', barberIds)
+        .gte('slot_time', `${date}T00:00:00`)
+        .lte('slot_time', `${date}T23:59:59`)
+        .neq('status', 'cancelled')
+    }
+    
+    return newSchemaQuery
+  },
 }
 
 // ── ANALYTICS ────────────────────────────────────────────────────
@@ -319,6 +466,12 @@ export const realtime = {
   subscribeBarberQueue: (barberId, callback) =>
     supabase.channel(`barber-queue:${barberId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings', filter: `barber_id=eq.${barberId}` }, callback)
+      .subscribe(),
+
+  // NEW: Subscribe to barber queue by profile ID
+  subscribeBarberQueueByProfile: (barberProfileId, callback) =>
+    supabase.channel(`barber-profile-queue:${barberProfileId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings', filter: `barber_profile_id=eq.${barberProfileId}` }, callback)
       .subscribe(),
 
   unsubscribe: (channel) => supabase.removeChannel(channel),

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { useCustomerBooking, useAvailableSlots } from '../../hooks/useQueue'
@@ -12,6 +13,7 @@ import { Modal, Spinner, Empty, SectionHead, StatusBadge, ConfirmDialog } from '
 export function CustomerHome() {
   const { profile } = useAuth()
   const { toast } = useToast()
+  const navigate = useNavigate()
   const { activeBooking, queue, loading, ahead, estWait, refresh } = useCustomerBooking(profile?.id)
   const [cancelConfirm, setCancelConfirm] = useState(false)
   const [nearbyShops, setNearbyShops] = useState([])
@@ -83,7 +85,7 @@ export function CustomerHome() {
           <div style={{ fontSize: 32, marginBottom: 10 }}>✂</div>
           <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 6 }}>No Active Booking</div>
           <div style={{ fontSize: 13, color: 'var(--text-tertiary)', marginBottom: 18 }}>Book a slot at your nearest barber shop and skip the wait.</div>
-          <a href="/app/book" className="btn btn-gold">Book a Slot</a>
+          <button onClick={() => navigate('/app/book')} className="btn btn-gold">Book a Slot</button>
         </div>
       )}
 
@@ -115,7 +117,7 @@ export function CustomerHome() {
       {/* Nearby Shops */}
       <SectionHead title="Shops Near You" />
       {nearbyShops.length > 0 ? nearbyShops.slice(0, 4).map(shop => (
-        <div key={shop.id} className="shop-card" onClick={() => window.location.href = '/app/book'}>
+        <div key={shop.id} className="shop-card" onClick={() => navigate('/app/book')}>
           <div className="shop-icon">✂️</div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 2 }}>{shop.name}</div>
@@ -155,6 +157,7 @@ export function CustomerHome() {
 export function CustomerBook() {
   const { profile } = useAuth()
   const { toast } = useToast()
+  const navigate = useNavigate()
   const [step, setStep] = useState(1)
   const [allShops, setAllShops] = useState([])
   const [shopBarbers, setShopBarbers] = useState([])
@@ -179,7 +182,13 @@ export function CustomerBook() {
     closing: selectedShop.closing_time || '19:00:00'
   } : { opening: '09:00', closing: '19:00' }
   
-  const { slots, loading: slotsLoading } = useAvailableSlots(selectedBarber?.id, selectedDate, shopHours)
+  // Only call useAvailableSlots when we're on step 2 and have a barber selected
+  const shouldFetchSlots = step === 2 && selectedBarber?.id
+  const { slots, loading: slotsLoading } = useAvailableSlots(
+    shouldFetchSlots ? selectedBarber.id : null, 
+    shouldFetchSlots ? selectedDate : null, 
+    shopHours
+  )
 
   useEffect(() => {
     shopsApi.getAll().then(({ data }) => setAllShops(data || []))
@@ -239,7 +248,7 @@ export function CustomerBook() {
       })
       
       if (barberError) {
-        console.error('Failed to create barber record:', barberError)
+        console.error('[CustomerBook] Failed to create barber record:', barberError)
         setLoading(false)
         toast('Failed to create booking. Please try again.', 'error')
         return
@@ -248,16 +257,32 @@ export function CustomerBook() {
       existingBarber = newBarber
     }
     
-    const { data, error } = await bookingsApi.create({
+    // Create booking data
+    const bookingData = {
       shop_id: selectedShop.id,
       barber_id: existingBarber.id,
       user_id: profile.id,
       service: selectedService.label,
       price: selectedService.price,
       slot_time: slotDT,
-    })
+    }
+    
+    // Try to add barber_profile_id if the column exists
+    // This will be silently ignored if the column doesn't exist
+    bookingData.barber_profile_id = selectedBarber.id
+    
+    console.log('[CustomerBook] Creating booking with:', bookingData)
+    
+    const { data, error } = await bookingsApi.create(bookingData)
+    
+    console.log('[CustomerBook] Booking creation response:', { data, error })
+    
     setLoading(false)
-    if (error) { toast(error.message || 'Booking failed', 'error'); return }
+    if (error) { 
+      console.error('[CustomerBook] Booking error:', error)
+      toast(error.message || 'Booking failed', 'error')
+      return 
+    }
     setConfirmed(data)
     toast('Booking confirmed! 🎉', 'success')
   }
@@ -275,7 +300,7 @@ export function CustomerBook() {
           </div>
         </div>
         <div className="flex gap-3">
-          <a href="/app" className="btn btn-ghost flex-1">View Queue</a>
+          <button onClick={() => navigate('/app')} className="btn btn-ghost flex-1">View Queue</button>
           <button className="btn btn-gold flex-1" onClick={() => { setConfirmed(null); setStep(1); setSelectedShop(null); setSelectedBarber(null); setSelectedSvc(null); setSelectedSlot(null); }}>
             Book Another
           </button>
@@ -501,6 +526,7 @@ export function CustomerHistory() {
 export function CustomerProfile() {
   const { profile, signOut, updateProfile } = useAuth()
   const { toast } = useToast()
+  const navigate = useNavigate()
   const [editing, setEditing] = useState(false)
   const [name, setName] = useState(profile?.name || '')
   const [loading, setLoading] = useState(false)
@@ -543,7 +569,7 @@ export function CustomerProfile() {
           { icon: 'info',    label: 'Help & Support',  sub: 'Contact us at hello@barberbook.in' },
         ].map((item, i) => (
           <div key={i} className="menu-item"
-            onClick={() => item.href ? (window.location.href = item.href) : null}
+            onClick={() => item.href ? navigate(item.href) : null}
             style={item.href ? {} : { cursor: 'default' }}
           >
             <div className="menu-item-icon"><Icon name={item.icon} size={16} color="var(--gold)" /></div>

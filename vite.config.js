@@ -6,7 +6,11 @@ export default defineConfig({
   plugins: [react()],
   root: '.',
   publicDir: 'public',
-  server: { port: 3000 },
+  server: { 
+    port: 3000,
+    open: '/app.html',
+    strictPort: true
+  },
   build: { 
     outDir: 'dist/app',
     emptyOutDir: true,

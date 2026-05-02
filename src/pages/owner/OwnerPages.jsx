@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { useOwnerDashboard } from '../../hooks/useQueue'
@@ -21,6 +22,7 @@ function useOwnerShop(ownerId) {
 // ── DASHBOARD ─────────────────────────────────────────────────────────────────
 export function OwnerDashboard() {
   const { profile } = useAuth()
+  const navigate = useNavigate()
   const { shop } = useOwnerShop(profile?.id)
   const { queue, loading, todayRevenue, totalToday, doneToday, waitingCount, dailyRevenue } = useOwnerDashboard(shop?.id)
   const maxRev = Math.max(...dailyRevenue.map(d => d.rev), 1)
@@ -28,7 +30,7 @@ export function OwnerDashboard() {
   if (loading) return <div className="page-inner"><Spinner page /></div>
   if (!shop) return (
     <div className="page-inner">
-      <Empty icon="🏪" title="No shop set up yet" sub="Go to 'My Shop' to create your barber shop listing." action={<a href="/app/shop" className="btn btn-gold">Set Up My Shop</a>} />
+      <Empty icon="🏪" title="No shop set up yet" sub="Go to 'My Shop' to create your barber shop listing." action={<button onClick={() => navigate('/app/shop')} className="btn btn-gold">Set Up My Shop</button>} />
     </div>
   )
 
@@ -529,6 +531,7 @@ export function OwnerShop() {
 export function OwnerProfile() {
   const { profile, signOut } = useAuth()
   const { toast } = useToast()
+  const navigate = useNavigate()
 
   return (
     <div className="page-inner">
@@ -550,7 +553,7 @@ export function OwnerProfile() {
           { icon: 'phone',  label: 'Phone',           sub: profile?.phone || 'Not set', href: null },
         ].map((item, i) => (
           <div key={i} className="menu-item"
-            onClick={() => item.href ? (window.location.href = item.href) : null}
+            onClick={() => item.href ? navigate(item.href) : null}
             style={item.href ? {} : { cursor: 'default' }}
           >
             <div className="menu-item-icon"><Icon name={item.icon} size={16} color="var(--green)" /></div>
