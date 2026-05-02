@@ -1,600 +1,2241 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>BarberBook — Skip the Wait</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet"/>
-<style>
-:root{--gold:#C9A84C;--gold-l:#E8C97A;--gold-bg:rgba(201,168,76,.08);--gold-bdr:rgba(201,168,76,.2);--black:#06070A;--surface:#0E0F13;--s2:#141519;--s3:#1A1C22;--s4:#21242C;--outline:rgba(255,255,255,.06);--outline2:rgba(255,255,255,.1);--cream:#F2EEE6;--muted:#6B6979;--light:#9A97A0;--red:#E05252;--green:#3DBD7D;--blue:#4B9FE0;--radius:14px;--radius-sm:8px}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{font-family:'DM Sans',sans-serif;background:var(--black);color:var(--cream);overflow-x:hidden;-webkit-font-smoothing:antialiased}
-::selection{background:rgba(201,168,76,.25)}
-::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--black)}::-webkit-scrollbar-thumb{background:var(--s4);border-radius:2px}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BarberBook — Skip the Wait</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap"
+    rel="stylesheet" />
+  <style>
+    :root {
+      --gold: #C9A84C;
+      --gold-l: #E8C97A;
+      --gold-bg: rgba(201, 168, 76, .08);
+      --gold-bdr: rgba(201, 168, 76, .2);
+      --black: #06070A;
+      --surface: #0E0F13;
+      --s2: #141519;
+      --s3: #1A1C22;
+      --s4: #21242C;
+      --outline: rgba(255, 255, 255, .06);
+      --outline2: rgba(255, 255, 255, .1);
+      --cream: #F2EEE6;
+      --muted: #6B6979;
+      --light: #9A97A0;
+      --red: #E05252;
+      --green: #3DBD7D;
+      --blue: #4B9FE0;
+      --radius: 14px;
+      --radius-sm: 8px
+    }
 
-/* CURSOR */
-.cursor{width:10px;height:10px;background:var(--gold);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:transform .08s ease;mix-blend-mode:difference}
-.cursor-ring{width:32px;height:32px;border:1.5px solid rgba(201,168,76,.5);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:all .14s ease}
-@media(max-width:768px){.cursor,.cursor-ring{display:none}}
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
 
-/* NAV */
-nav{position:fixed;top:0;width:100%;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 4rem;height:68px;background:rgba(6,7,10,.88);backdrop-filter:blur(16px) saturate(1.4);border-bottom:1px solid var(--outline);transition:all .3s}
-.nav-logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:4px;color:var(--gold);display:flex;align-items:center;gap:10px;text-decoration:none}
-.nav-logo-mark{width:32px;height:32px;background:var(--gold);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--black);flex-shrink:0}
-.nav-logo span{color:var(--cream)}
-.nav-links{display:flex;align-items:center;gap:.25rem;list-style:none}
-.nav-links a{color:var(--light);text-decoration:none;font-size:13.5px;font-weight:500;padding:6px 14px;border-radius:6px;transition:all .2s}
-.nav-links a:hover{color:var(--cream);background:rgba(255,255,255,.05)}
-.nav-ctas{display:flex;align-items:center;gap:10px}
-.nav-ghost{padding:8px 16px;border:1px solid var(--gold-bdr);border-radius:var(--radius-sm);color:var(--gold);font-size:13px;font-weight:600;text-decoration:none;transition:all .2s}
-.nav-ghost:hover{background:var(--gold-bg);border-color:var(--gold)}
-.nav-solid{padding:9px 18px;background:var(--gold);border-radius:var(--radius-sm);color:var(--black);font-size:13px;font-weight:700;text-decoration:none;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
-.nav-solid:hover{background:var(--gold-l);transform:translateY(-1px)}
-.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:8px;border:none;background:none}
-.hamburger span{width:22px;height:2px;background:var(--cream);border-radius:1px;transition:all .3s;display:block}
-.mob-menu{display:none;position:fixed;top:68px;left:0;right:0;background:var(--surface);border-bottom:1px solid var(--outline);padding:16px 24px 24px;z-index:99;flex-direction:column;gap:4px}
-.mob-menu.open{display:flex}
-.mob-menu a{padding:12px 14px;border-radius:var(--radius-sm);color:var(--light);text-decoration:none;font-size:15px;font-weight:500;transition:all .2s}
-.mob-menu a:hover{color:var(--cream);background:rgba(255,255,255,.04)}
-.mob-ctas{display:flex;gap:10px;margin-top:12px}
-.mob-ctas a{flex:1;text-align:center}
-@media(max-width:900px){nav{padding:0 1.5rem}.nav-links,.nav-ctas{display:none}.hamburger{display:flex}}
+    html {
+      scroll-behavior: smooth
+    }
 
-/* HERO */
-.hero{min-height:100vh;display:flex;align-items:center;padding:0 4rem;padding-top:68px;position:relative;overflow:hidden}
-.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 65% 50%,rgba(201,168,76,.055) 0%,transparent 70%),repeating-linear-gradient(0deg,transparent,transparent 48px,rgba(255,255,255,.018) 48px,rgba(255,255,255,.018) 49px),repeating-linear-gradient(90deg,transparent,transparent 48px,rgba(255,255,255,.018) 48px,rgba(255,255,255,.018) 49px);pointer-events:none}
-.hero-inner{display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:4rem;width:100%;max-width:1200px;margin:0 auto;position:relative;z-index:2}
-.hero-tag{display:inline-flex;align-items:center;gap:8px;background:var(--gold-bg);border:1px solid var(--gold-bdr);color:var(--gold);padding:5px 14px;border-radius:20px;font-size:11.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:24px;animation:fadeUp .7s ease both}
-.hero-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 1.8s infinite}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
-h1.hero-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(3.8rem,6.5vw,6.4rem);line-height:.92;letter-spacing:1px;margin-bottom:24px;animation:fadeUp .7s .1s ease both}
-h1.hero-title .gold{color:var(--gold)}
-h1.hero-title .outline{color:transparent;-webkit-text-stroke:1.5px rgba(201,168,76,.5)}
-.hero-desc{font-size:16px;line-height:1.75;color:var(--light);max-width:480px;margin-bottom:36px;animation:fadeUp .7s .2s ease both}
-.hero-ctas{display:flex;gap:12px;flex-wrap:wrap;animation:fadeUp .7s .3s ease both;margin-bottom:36px}
-.btn-primary{display:inline-flex;align-items:center;gap:10px;background:var(--gold);color:var(--black);padding:14px 26px;border-radius:var(--radius-sm);font-weight:700;font-size:14.5px;text-decoration:none;transition:all .22s;border:none;cursor:pointer}
-.btn-primary:hover{background:var(--gold-l);transform:translateY(-2px);box-shadow:0 8px 28px rgba(201,168,76,.3)}
-.btn-secondary{display:inline-flex;align-items:center;gap:10px;background:var(--s3);color:var(--cream);padding:14px 24px;border-radius:var(--radius-sm);font-weight:600;font-size:14.5px;text-decoration:none;border:1px solid var(--outline2);transition:all .22s}
-.btn-secondary:hover{background:var(--s4);border-color:rgba(255,255,255,.16);transform:translateY(-2px)}
-.btn-secondary svg{color:var(--gold)}
-.hero-proof{display:flex;align-items:center;gap:14px;flex-wrap:wrap;animation:fadeUp .7s .4s ease both}
-.proof-avs{display:flex}
-.pav{width:30px;height:30px;border-radius:50%;border:2px solid var(--black);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--black);margin-left:-8px}
-.pav:first-child{margin-left:0}
-.proof-text{font-size:13px;color:var(--light)}
-.proof-text strong{color:var(--cream)}
-.proof-sep{width:1px;height:18px;background:var(--outline2)}
-@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
-@media(max-width:900px){.hero{padding:6rem 1.5rem 3rem;min-height:auto}.hero-inner{grid-template-columns:1fr;gap:2.5rem}.hero-right{order:-1}.hero-ctas{flex-direction:column}}
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--black);
+      color: var(--cream);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased
+    }
 
-/* PHONE MOCKUP */
-.phone-frame{width:256px;background:var(--surface);border-radius:42px;border:1px solid var(--outline2);box-shadow:0 40px 80px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.04),0 0 60px rgba(201,168,76,.06);overflow:hidden;animation:float 4.5s ease-in-out infinite}
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}}
-.ph-notch{width:90px;height:26px;background:var(--black);border-radius:0 0 18px 18px;margin:0 auto}
-.ph-status{display:flex;justify-content:space-between;align-items:center;padding:6px 16px 10px;font-size:10px;font-weight:600;color:var(--light)}
-.ph-screen{padding:0 14px 20px}
-.ph-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
-.ph-logo{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:3px;color:var(--gold)}
-.ph-av{width:28px;height:28px;border-radius:50%;background:var(--gold);color:var(--black);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
-.ph-token{background:linear-gradient(135deg,#1a1300,#0d0b00);border:1px solid rgba(201,168,76,.3);border-radius:16px;padding:16px;text-align:center;margin-bottom:12px}
-.ph-tok-tag{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:3px}
-.ph-tok-num{font-family:'Bebas Neue',sans-serif;font-size:54px;color:var(--gold);line-height:1}
-.ph-tok-sub{font-size:9px;color:var(--light);margin-top:3px}
-.ph-tok-meta{display:flex;justify-content:center;gap:14px;margin-top:10px}
-.ph-tm-val{font-size:12px;font-weight:700}
-.ph-tm-key{font-size:8px;color:var(--muted);margin-top:1px}
-.ph-q-title{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:5px}
-.ph-ldot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite}
-.ph-qi{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)}
-.ph-qi:last-child{border:none}
-.ph-qn{font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--gold);width:22px}
-.ph-qi-info{flex:1}
-.ph-qi-name{font-size:10px;font-weight:600}
-.ph-qi-sub{font-size:8.5px;color:var(--muted);margin-top:1px}
-.ph-bdg{font-size:8px;font-weight:700;padding:2px 6px;border-radius:10px}
-.bdg-active{background:rgba(224,82,82,.15);color:var(--red)}
-.bdg-wait{background:rgba(201,168,76,.12);color:var(--gold)}
-.bdg-you{background:var(--gold);color:var(--black)}
+    ::selection {
+      background: rgba(201, 168, 76, .25)
+    }
 
-/* STATS */
-.stats{background:var(--s2);border-top:1px solid var(--outline);border-bottom:1px solid var(--outline);padding:2.5rem 4rem;display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background-color:var(--outline)}
-.stat{background:var(--s2);padding:1.5rem 2rem;text-align:center}
-.stat-n{font-family:'Bebas Neue',sans-serif;font-size:2.8rem;color:var(--gold);line-height:1}
-.stat-l{font-size:11px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-top:5px;font-weight:600}
-@media(max-width:768px){.stats{grid-template-columns:1fr 1fr;padding:0}.stat{padding:1.5rem}}
+    ::-webkit-scrollbar {
+      width: 4px
+    }
 
-/* SECTIONS */
-.wrap{max-width:1200px;margin:0 auto;padding:7rem 4rem}
-.sec-tag{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:14px;display:flex;align-items:center;gap:10px}
-.sec-tag::before{content:'';width:24px;height:1px;background:var(--gold)}
-.sec-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.2rem,4vw,3.6rem);line-height:1;letter-spacing:1px;margin-bottom:16px}
-.sec-title .gold{color:var(--gold)}
-.sec-desc{font-size:15px;color:var(--light);line-height:1.7;max-width:560px;margin-bottom:2.5rem}
-@media(max-width:768px){.wrap{padding:4rem 1.5rem}}
+    ::-webkit-scrollbar-track {
+      background: var(--black)
+    }
 
-/* PROBLEMS */
-.problem-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.problem-card{background:var(--s2);border:1px solid var(--outline);border-radius:16px;padding:24px;border-left:3px solid var(--red);transition:all .2s}
-.problem-card:hover{border-color:var(--gold);transform:translateX(4px)}
-.pc-icon{font-size:24px;margin-bottom:12px}
-.pc-title{font-size:15px;font-weight:700;margin-bottom:6px}
-.pc-desc{font-size:13px;color:var(--light);line-height:1.6}
-@media(max-width:768px){.problem-grid{grid-template-columns:1fr}}
+    ::-webkit-scrollbar-thumb {
+      background: var(--s4);
+      border-radius: 2px
+    }
 
-/* FEATURES */
-.feat-section{padding:7rem 4rem;background:var(--surface);border-top:1px solid var(--outline)}
-.feat-inner{max-width:1200px;margin:0 auto}
-.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--outline);border:1px solid var(--outline);border-radius:20px;overflow:hidden;margin-top:2.5rem}
-.feat-card{background:var(--s2);padding:28px;position:relative;transition:background .2s}
-.feat-card::after{content:'';position:absolute;bottom:0;left:0;width:0;height:2px;background:var(--gold);transition:width .35s ease}
-.feat-card:hover{background:var(--s3)}
-.feat-card:hover::after{width:100%}
-.feat-icon{width:44px;height:44px;border-radius:11px;background:var(--gold-bg);border:1px solid var(--gold-bdr);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
-.feat-icon svg{color:var(--gold)}
-.feat-title{font-size:15px;font-weight:700;margin-bottom:8px}
-.feat-desc{font-size:13px;color:var(--light);line-height:1.6}
-@media(max-width:900px){.feat-section{padding:4rem 1.5rem}.feat-grid{grid-template-columns:1fr}}
+    /* CURSOR */
+    .cursor {
+      width: 10px;
+      height: 10px;
+      background: var(--gold);
+      border-radius: 50%;
+      position: fixed;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      transition: transform .08s ease;
+      mix-blend-mode: difference
+    }
 
-/* HOW */
-.how-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:2.5rem;position:relative}
-.how-grid::before{content:'';position:absolute;top:28px;left:10%;right:10%;height:1px;background:linear-gradient(to right,transparent,var(--gold-bdr),transparent)}
-.how-step{text-align:center;padding:0 1rem}
-.how-num{width:48px;height:48px;background:var(--gold);color:var(--black);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:22px;margin:0 auto 18px;box-shadow:0 0 0 6px rgba(201,168,76,.08),0 0 0 12px rgba(201,168,76,.04)}
-.how-title{font-weight:700;font-size:14px;margin-bottom:8px}
-.how-desc{font-size:12.5px;color:var(--light);line-height:1.6}
-@media(max-width:768px){.how-grid{grid-template-columns:1fr 1fr;gap:2rem}.how-grid::before{display:none}}
+    .cursor-ring {
+      width: 32px;
+      height: 32px;
+      border: 1.5px solid rgba(201, 168, 76, .5);
+      border-radius: 50%;
+      position: fixed;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 9998;
+      transform: translate(-50%, -50%);
+      transition: all .14s ease
+    }
 
-/* ROLES */
-.roles-section{padding:7rem 4rem;background:var(--surface);border-top:1px solid var(--outline)}
-.roles-inner{max-width:1100px;margin:0 auto}
-.roles-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:2.5rem}
-.role-card{background:var(--s2);border:1px solid var(--outline);border-radius:20px;padding:28px;transition:all .25s}
-.role-card:hover{border-color:var(--gold-bdr);box-shadow:0 0 32px rgba(201,168,76,.06);transform:translateY(-3px)}
-.role-top{display:flex;align-items:center;gap:14px;margin-bottom:18px}
-.role-av{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:18px;flex-shrink:0}
-.av-c{background:rgba(201,168,76,.12);color:var(--gold);border:1px solid rgba(201,168,76,.2)}
-.av-b{background:rgba(75,159,224,.12);color:#4B9FE0;border:1px solid rgba(75,159,224,.2)}
-.av-o{background:rgba(61,189,125,.12);color:var(--green);border:1px solid rgba(61,189,125,.2)}
-.role-name{font-size:16px;font-weight:700}
-.role-sub-tag{font-size:11px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:1px}
-.rf{display:flex;align-items:flex-start;gap:9px;font-size:13px;color:var(--light);padding:7px 0;border-bottom:1px solid var(--outline)}
-.rf:last-child{border:none}
-.rf-dot{width:5px;height:5px;border-radius:50%;background:var(--gold);flex-shrink:0;margin-top:6px}
-@media(max-width:900px){.roles-section{padding:4rem 1.5rem}.roles-grid{grid-template-columns:1fr}}
+    @media(max-width:768px) {
 
-/* ══ GET APP SECTION ══ */
-.get-app{padding:7rem 4rem;background:var(--surface);border-top:1px solid var(--outline);border-bottom:1px solid var(--outline);position:relative;overflow:hidden}
-.get-app::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 80% at 50% 50%,rgba(201,168,76,.045) 0%,transparent 70%);pointer-events:none}
-.get-app-inner{max-width:1100px;margin:0 auto;position:relative;z-index:1}
-.get-app-hd{text-align:center;margin-bottom:3rem}
-.get-app-tag{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:14px}
-.get-app-tag::before,.get-app-tag::after{content:'';width:28px;height:1px;background:var(--gold)}
-.get-app-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.4rem,4.5vw,4rem);line-height:1;letter-spacing:1px;margin-bottom:14px}
-.get-app-title .gold{color:var(--gold)}
-.get-app-sub{font-size:15px;color:var(--light);max-width:540px;margin:0 auto;line-height:1.7}
+      .cursor,
+      .cursor-ring {
+        display: none
+      }
+    }
 
-/* TWO OPTION CARDS */
-.app-options{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:3rem}
-.app-opt{background:var(--s2);border:1px solid var(--outline);border-radius:20px;padding:32px;position:relative;overflow:hidden;transition:all .25s;display:flex;flex-direction:column}
-.app-opt:hover{border-color:var(--gold-bdr);box-shadow:0 0 40px rgba(201,168,76,.07);transform:translateY(-3px)}
-.app-opt.featured{border-color:var(--gold-bdr);background:linear-gradient(145deg,#0f0c00,#0E0F13)}
-.opt-badge{position:absolute;top:16px;right:16px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;border-radius:20px}
-.badge-web{background:rgba(201,168,76,.12);color:var(--gold);border:1px solid rgba(201,168,76,.2)}
-.badge-apk{background:rgba(61,189,125,.12);color:var(--green);border:1px solid rgba(61,189,125,.2)}
-.opt-icon{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:20px;flex-shrink:0}
-.ico-web{background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2)}
-.ico-apk{background:rgba(61,189,125,.1);border:1px solid rgba(61,189,125,.2)}
-.opt-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1.5px;margin-bottom:8px}
-.opt-desc{font-size:14px;color:var(--light);line-height:1.65;margin-bottom:20px;flex:1}
-.opt-feats{list-style:none;margin-bottom:24px}
-.opt-feats li{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--light);padding:5px 0;border-bottom:1px solid var(--outline)}
-.opt-feats li:last-child{border:none}
-.opt-feats li::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--gold);flex-shrink:0}
-.opt-btn-p{display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 20px;background:var(--gold);color:var(--black);border-radius:var(--radius-sm);font-weight:700;font-size:14px;text-decoration:none;transition:all .2s;border:none;cursor:pointer;width:100%}
-.opt-btn-p:hover{background:var(--gold-l);box-shadow:0 6px 20px rgba(201,168,76,.3)}
-.opt-btn-s{display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 20px;background:transparent;color:var(--gold);border-radius:var(--radius-sm);font-weight:700;font-size:14px;text-decoration:none;transition:all .2s;border:1px solid var(--gold-bdr);cursor:pointer;width:100%}
-.opt-btn-s:hover{background:var(--gold-bg);border-color:var(--gold)}
-.opt-sub{text-align:center;font-size:11.5px;color:var(--muted);margin-top:10px}
-@media(max-width:900px){.get-app{padding:4rem 1.5rem}.app-options{grid-template-columns:1fr}}
+    /* NAV */
+    nav {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 4rem;
+      height: 68px;
+      background: rgba(6, 7, 10, .88);
+      backdrop-filter: blur(16px) saturate(1.4);
+      border-bottom: 1px solid var(--outline);
+      transition: all .3s
+    }
 
-/* APK GUIDE */
-.apk-guide{background:var(--s3);border:1px solid var(--outline);border-radius:16px;padding:24px}
-.apk-guide-title{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
-.apk-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-.apk-step{text-align:center}
-.apk-step-num{width:28px;height:28px;border-radius:50%;background:var(--gold-bg);border:1px solid var(--gold-bdr);color:var(--gold);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 8px}
-.apk-step-title{font-size:12px;font-weight:700;margin-bottom:3px}
-.apk-step-desc{font-size:11px;color:var(--muted);line-height:1.5}
-@media(max-width:768px){.apk-steps{grid-template-columns:1fr 1fr}}
+    .nav-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      letter-spacing: 4px;
+      color: var(--gold);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none
+    }
 
-/* FOOTER */
-footer{background:var(--surface);border-top:1px solid var(--outline);padding:3rem 4rem 2rem}
-.footer-inner{max-width:1100px;margin:0 auto}
-.footer-top{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:3rem;margin-bottom:3rem}
-.f-logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--gold);display:flex;align-items:center;gap:9px;margin-bottom:12px;text-decoration:none}
-.f-logo-mark{width:30px;height:30px;background:var(--gold);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--black)}
-.f-logo span{color:var(--cream)}
-.f-desc{font-size:13px;color:var(--light);line-height:1.65;max-width:240px}
-.f-col-title{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
-.f-links{list-style:none;display:flex;flex-direction:column;gap:8px}
-.f-links a{font-size:13.5px;color:var(--light);text-decoration:none;transition:color .2s}
-.f-links a:hover{color:var(--gold)}
-.footer-bottom{display:flex;justify-content:space-between;align-items:center;padding-top:24px;border-top:1px solid var(--outline);font-size:12px;color:var(--muted)}
-.stacks{display:flex;gap:10px;flex-wrap:wrap}
-.chip{padding:3px 10px;border-radius:20px;background:var(--s3);border:1px solid var(--outline);font-size:11px;color:var(--muted)}
-@media(max-width:768px){footer{padding:3rem 1.5rem 2rem}.footer-top{grid-template-columns:1fr;gap:2rem}.footer-bottom{flex-direction:column;gap:12px;text-align:center}}
+    .nav-logo-mark {
+      width: 32px;
+      height: 32px;
+      background: var(--gold);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      color: var(--black);
+      flex-shrink: 0
+    }
 
-/* UTILS */
-.scissors-div{text-align:center;padding:1.5rem;color:rgba(201,168,76,.2);font-size:1.2rem;letter-spacing:12px;user-select:none}
-.reveal{opacity:0;transform:translateY(32px);transition:opacity .65s ease,transform .65s ease}
-.reveal.visible{opacity:1;transform:translateY(0)}
-</style>
+    .nav-logo span {
+      color: var(--cream)
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: .25rem;
+      list-style: none
+    }
+
+    .nav-links a {
+      color: var(--light);
+      text-decoration: none;
+      font-size: 13.5px;
+      font-weight: 500;
+      padding: 6px 14px;
+      border-radius: 6px;
+      transition: all .2s
+    }
+
+    .nav-links a:hover {
+      color: var(--cream);
+      background: rgba(255, 255, 255, .05)
+    }
+
+    .nav-ctas {
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .nav-ghost {
+      padding: 8px 16px;
+      border: 1px solid var(--gold-bdr);
+      border-radius: var(--radius-sm);
+      color: var(--gold);
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all .2s
+    }
+
+    .nav-ghost:hover {
+      background: var(--gold-bg);
+      border-color: var(--gold)
+    }
+
+    .nav-solid {
+      padding: 9px 18px;
+      background: var(--gold);
+      border-radius: var(--radius-sm);
+      color: var(--black);
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all .2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px
+    }
+
+    .nav-solid:hover {
+      background: var(--gold-l);
+      transform: translateY(-1px)
+    }
+
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+      padding: 8px;
+      border: none;
+      background: none
+    }
+
+    .hamburger span {
+      width: 22px;
+      height: 2px;
+      background: var(--cream);
+      border-radius: 1px;
+      transition: all .3s;
+      display: block
+    }
+
+    .mob-menu {
+      display: none;
+      position: fixed;
+      top: 68px;
+      left: 0;
+      right: 0;
+      background: var(--surface);
+      border-bottom: 1px solid var(--outline);
+      padding: 16px 24px 24px;
+      z-index: 99;
+      flex-direction: column;
+      gap: 4px
+    }
+
+    .mob-menu.open {
+      display: flex
+    }
+
+    .mob-menu a {
+      padding: 12px 14px;
+      border-radius: var(--radius-sm);
+      color: var(--light);
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 500;
+      transition: all .2s
+    }
+
+    .mob-menu a:hover {
+      color: var(--cream);
+      background: rgba(255, 255, 255, .04)
+    }
+
+    .mob-ctas {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px
+    }
+
+    .mob-ctas a {
+      flex: 1;
+      text-align: center
+    }
+
+    @media(max-width:900px) {
+      nav {
+        padding: 0 1.5rem
+      }
+
+      .nav-links,
+      .nav-ctas {
+        display: none
+      }
+
+      .hamburger {
+        display: flex
+      }
+    }
+
+    /* HERO */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 0 4rem;
+      padding-top: 68px;
+      position: relative;
+      overflow: hidden
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 70% 60% at 65% 50%, rgba(201, 168, 76, .055) 0%, transparent 70%), repeating-linear-gradient(0deg, transparent, transparent 48px, rgba(255, 255, 255, .018) 48px, rgba(255, 255, 255, .018) 49px), repeating-linear-gradient(90deg, transparent, transparent 48px, rgba(255, 255, 255, .018) 48px, rgba(255, 255, 255, .018) 49px);
+      pointer-events: none
+    }
+
+    .hero-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
+      gap: 4rem;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 2
+    }
+
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--gold-bg);
+      border: 1px solid var(--gold-bdr);
+      color: var(--gold);
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+      animation: fadeUp .7s ease both
+    }
+
+    .hero-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse 1.8s infinite
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1)
+      }
+
+      50% {
+        opacity: .35;
+        transform: scale(.7)
+      }
+    }
+
+    h1.hero-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(3.8rem, 6.5vw, 6.4rem);
+      line-height: .92;
+      letter-spacing: 1px;
+      margin-bottom: 24px;
+      animation: fadeUp .7s .1s ease both
+    }
+
+    h1.hero-title .gold {
+      color: var(--gold)
+    }
+
+    h1.hero-title .outline {
+      color: transparent;
+      -webkit-text-stroke: 1.5px rgba(201, 168, 76, .5)
+    }
+
+    .hero-desc {
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--light);
+      max-width: 480px;
+      margin-bottom: 36px;
+      animation: fadeUp .7s .2s ease both
+    }
+
+    .hero-ctas {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      animation: fadeUp .7s .3s ease both;
+      margin-bottom: 36px
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--gold);
+      color: var(--black);
+      padding: 14px 26px;
+      border-radius: var(--radius-sm);
+      font-weight: 700;
+      font-size: 14.5px;
+      text-decoration: none;
+      transition: all .22s;
+      border: none;
+      cursor: pointer
+    }
+
+    .btn-primary:hover {
+      background: var(--gold-l);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(201, 168, 76, .3)
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--s3);
+      color: var(--cream);
+      padding: 14px 24px;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      font-size: 14.5px;
+      text-decoration: none;
+      border: 1px solid var(--outline2);
+      transition: all .22s
+    }
+
+    .btn-secondary:hover {
+      background: var(--s4);
+      border-color: rgba(255, 255, 255, .16);
+      transform: translateY(-2px)
+    }
+
+    .btn-secondary svg {
+      color: var(--gold)
+    }
+
+    .hero-proof {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      animation: fadeUp .7s .4s ease both
+    }
+
+    .proof-avs {
+      display: flex
+    }
+
+    .pav {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: 2px solid var(--black);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--black);
+      margin-left: -8px
+    }
+
+    .pav:first-child {
+      margin-left: 0
+    }
+
+    .proof-text {
+      font-size: 13px;
+      color: var(--light)
+    }
+
+    .proof-text strong {
+      color: var(--cream)
+    }
+
+    .proof-sep {
+      width: 1px;
+      height: 18px;
+      background: var(--outline2)
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(24px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    @media(max-width:900px) {
+      .hero {
+        padding: 6rem 1.5rem 3rem;
+        min-height: auto
+      }
+
+      .hero-inner {
+        grid-template-columns: 1fr;
+        gap: 2.5rem
+      }
+
+      .hero-right {
+        order: -1
+      }
+
+      .hero-ctas {
+        flex-direction: column
+      }
+    }
+
+    /* PHONE MOCKUP */
+    .phone-frame {
+      width: 256px;
+      background: var(--surface);
+      border-radius: 42px;
+      border: 1px solid var(--outline2);
+      box-shadow: 0 40px 80px rgba(0, 0, 0, .7), 0 0 0 1px rgba(255, 255, 255, .04), 0 0 60px rgba(201, 168, 76, .06);
+      overflow: hidden;
+      animation: float 4.5s ease-in-out infinite
+    }
+
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translateY(0)
+      }
+
+      50% {
+        transform: translateY(-16px)
+      }
+    }
+
+    .ph-notch {
+      width: 90px;
+      height: 26px;
+      background: var(--black);
+      border-radius: 0 0 18px 18px;
+      margin: 0 auto
+    }
+
+    .ph-status {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 16px 10px;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--light)
+    }
+
+    .ph-screen {
+      padding: 0 14px 20px
+    }
+
+    .ph-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px
+    }
+
+    .ph-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 16px;
+      letter-spacing: 3px;
+      color: var(--gold)
+    }
+
+    .ph-av {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--gold);
+      color: var(--black);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700
+    }
+
+    .ph-token {
+      background: linear-gradient(135deg, #1a1300, #0d0b00);
+      border: 1px solid rgba(201, 168, 76, .3);
+      border-radius: 16px;
+      padding: 16px;
+      text-align: center;
+      margin-bottom: 12px
+    }
+
+    .ph-tok-tag {
+      font-size: 8px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 3px
+    }
+
+    .ph-tok-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 54px;
+      color: var(--gold);
+      line-height: 1
+    }
+
+    .ph-tok-sub {
+      font-size: 9px;
+      color: var(--light);
+      margin-top: 3px
+    }
+
+    .ph-tok-meta {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      margin-top: 10px
+    }
+
+    .ph-tm-val {
+      font-size: 12px;
+      font-weight: 700
+    }
+
+    .ph-tm-key {
+      font-size: 8px;
+      color: var(--muted);
+      margin-top: 1px
+    }
+
+    .ph-q-title {
+      font-size: 9px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 5px
+    }
+
+    .ph-ldot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse 1.5s infinite
+    }
+
+    .ph-qi {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, .04)
+    }
+
+    .ph-qi:last-child {
+      border: none
+    }
+
+    .ph-qn {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 16px;
+      color: var(--gold);
+      width: 22px
+    }
+
+    .ph-qi-info {
+      flex: 1
+    }
+
+    .ph-qi-name {
+      font-size: 10px;
+      font-weight: 600
+    }
+
+    .ph-qi-sub {
+      font-size: 8.5px;
+      color: var(--muted);
+      margin-top: 1px
+    }
+
+    .ph-bdg {
+      font-size: 8px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 10px
+    }
+
+    .bdg-active {
+      background: rgba(224, 82, 82, .15);
+      color: var(--red)
+    }
+
+    .bdg-wait {
+      background: rgba(201, 168, 76, .12);
+      color: var(--gold)
+    }
+
+    .bdg-you {
+      background: var(--gold);
+      color: var(--black)
+    }
+
+    /* STATS */
+    .stats {
+      background: var(--s2);
+      border-top: 1px solid var(--outline);
+      border-bottom: 1px solid var(--outline);
+      padding: 2.5rem 4rem;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background-color: var(--outline)
+    }
+
+    .stat {
+      background: var(--s2);
+      padding: 1.5rem 2rem;
+      text-align: center
+    }
+
+    .stat-n {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.8rem;
+      color: var(--gold);
+      line-height: 1
+    }
+
+    .stat-l {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-top: 5px;
+      font-weight: 600
+    }
+
+    @media(max-width:768px) {
+      .stats {
+        grid-template-columns: 1fr 1fr;
+        padding: 0
+      }
+
+      .stat {
+        padding: 1.5rem
+      }
+    }
+
+    /* SECTIONS */
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 7rem 4rem
+    }
+
+    .sec-tag {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .sec-tag::before {
+      content: '';
+      width: 24px;
+      height: 1px;
+      background: var(--gold)
+    }
+
+    .sec-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(2.2rem, 4vw, 3.6rem);
+      line-height: 1;
+      letter-spacing: 1px;
+      margin-bottom: 16px
+    }
+
+    .sec-title .gold {
+      color: var(--gold)
+    }
+
+    .sec-desc {
+      font-size: 15px;
+      color: var(--light);
+      line-height: 1.7;
+      max-width: 560px;
+      margin-bottom: 2.5rem
+    }
+
+    @media(max-width:768px) {
+      .wrap {
+        padding: 4rem 1.5rem
+      }
+    }
+
+    /* PROBLEMS */
+    .problem-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px
+    }
+
+    .problem-card {
+      background: var(--s2);
+      border: 1px solid var(--outline);
+      border-radius: 16px;
+      padding: 24px;
+      border-left: 3px solid var(--red);
+      transition: all .2s
+    }
+
+    .problem-card:hover {
+      border-color: var(--gold);
+      transform: translateX(4px)
+    }
+
+    .pc-icon {
+      font-size: 24px;
+      margin-bottom: 12px
+    }
+
+    .pc-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 6px
+    }
+
+    .pc-desc {
+      font-size: 13px;
+      color: var(--light);
+      line-height: 1.6
+    }
+
+    @media(max-width:768px) {
+      .problem-grid {
+        grid-template-columns: 1fr
+      }
+    }
+
+    /* FEATURES */
+    .feat-section {
+      padding: 7rem 4rem;
+      background: var(--surface);
+      border-top: 1px solid var(--outline)
+    }
+
+    .feat-inner {
+      max-width: 1200px;
+      margin: 0 auto
+    }
+
+    .feat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--outline);
+      border: 1px solid var(--outline);
+      border-radius: 20px;
+      overflow: hidden;
+      margin-top: 2.5rem
+    }
+
+    .feat-card {
+      background: var(--s2);
+      padding: 28px;
+      position: relative;
+      transition: background .2s
+    }
+
+    .feat-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: var(--gold);
+      transition: width .35s ease
+    }
+
+    .feat-card:hover {
+      background: var(--s3)
+    }
+
+    .feat-card:hover::after {
+      width: 100%
+    }
+
+    .feat-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 11px;
+      background: var(--gold-bg);
+      border: 1px solid var(--gold-bdr);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px
+    }
+
+    .feat-icon svg {
+      color: var(--gold)
+    }
+
+    .feat-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 8px
+    }
+
+    .feat-desc {
+      font-size: 13px;
+      color: var(--light);
+      line-height: 1.6
+    }
+
+    @media(max-width:900px) {
+      .feat-section {
+        padding: 4rem 1.5rem
+      }
+
+      .feat-grid {
+        grid-template-columns: 1fr
+      }
+    }
+
+    /* HOW */
+    .how-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      margin-top: 2.5rem;
+      position: relative
+    }
+
+    .how-grid::before {
+      content: '';
+      position: absolute;
+      top: 28px;
+      left: 10%;
+      right: 10%;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--gold-bdr), transparent)
+    }
+
+    .how-step {
+      text-align: center;
+      padding: 0 1rem
+    }
+
+    .how-num {
+      width: 48px;
+      height: 48px;
+      background: var(--gold);
+      color: var(--black);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      margin: 0 auto 18px;
+      box-shadow: 0 0 0 6px rgba(201, 168, 76, .08), 0 0 0 12px rgba(201, 168, 76, .04)
+    }
+
+    .how-title {
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 8px
+    }
+
+    .how-desc {
+      font-size: 12.5px;
+      color: var(--light);
+      line-height: 1.6
+    }
+
+    @media(max-width:768px) {
+      .how-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem
+      }
+
+      .how-grid::before {
+        display: none
+      }
+    }
+
+    /* ROLES */
+    .roles-section {
+      padding: 7rem 4rem;
+      background: var(--surface);
+      border-top: 1px solid var(--outline)
+    }
+
+    .roles-inner {
+      max-width: 1100px;
+      margin: 0 auto
+    }
+
+    .roles-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 2.5rem
+    }
+
+    .role-card {
+      background: var(--s2);
+      border: 1px solid var(--outline);
+      border-radius: 20px;
+      padding: 28px;
+      transition: all .25s
+    }
+
+    .role-card:hover {
+      border-color: var(--gold-bdr);
+      box-shadow: 0 0 32px rgba(201, 168, 76, .06);
+      transform: translateY(-3px)
+    }
+
+    .role-top {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 18px
+    }
+
+    .role-av {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 18px;
+      flex-shrink: 0
+    }
+
+    .av-c {
+      background: rgba(201, 168, 76, .12);
+      color: var(--gold);
+      border: 1px solid rgba(201, 168, 76, .2)
+    }
+
+    .av-b {
+      background: rgba(75, 159, 224, .12);
+      color: #4B9FE0;
+      border: 1px solid rgba(75, 159, 224, .2)
+    }
+
+    .av-o {
+      background: rgba(61, 189, 125, .12);
+      color: var(--green);
+      border: 1px solid rgba(61, 189, 125, .2)
+    }
+
+    .role-name {
+      font-size: 16px;
+      font-weight: 700
+    }
+
+    .role-sub-tag {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+      text-transform: uppercase;
+      letter-spacing: 1px
+    }
+
+    .rf {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      font-size: 13px;
+      color: var(--light);
+      padding: 7px 0;
+      border-bottom: 1px solid var(--outline)
+    }
+
+    .rf:last-child {
+      border: none
+    }
+
+    .rf-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--gold);
+      flex-shrink: 0;
+      margin-top: 6px
+    }
+
+    @media(max-width:900px) {
+      .roles-section {
+        padding: 4rem 1.5rem
+      }
+
+      .roles-grid {
+        grid-template-columns: 1fr
+      }
+    }
+
+    /* ══ GET APP SECTION ══ */
+    .get-app {
+      padding: 7rem 4rem;
+      background: var(--surface);
+      border-top: 1px solid var(--outline);
+      border-bottom: 1px solid var(--outline);
+      position: relative;
+      overflow: hidden
+    }
+
+    .get-app::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 60% 80% at 50% 50%, rgba(201, 168, 76, .045) 0%, transparent 70%);
+      pointer-events: none
+    }
+
+    .get-app-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1
+    }
+
+    .get-app-hd {
+      text-align: center;
+      margin-bottom: 3rem
+    }
+
+    .get-app-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 14px
+    }
+
+    .get-app-tag::before,
+    .get-app-tag::after {
+      content: '';
+      width: 28px;
+      height: 1px;
+      background: var(--gold)
+    }
+
+    .get-app-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(2.4rem, 4.5vw, 4rem);
+      line-height: 1;
+      letter-spacing: 1px;
+      margin-bottom: 14px
+    }
+
+    .get-app-title .gold {
+      color: var(--gold)
+    }
+
+    .get-app-sub {
+      font-size: 15px;
+      color: var(--light);
+      max-width: 540px;
+      margin: 0 auto;
+      line-height: 1.7
+    }
+
+    /* TWO OPTION CARDS */
+    .app-options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 3rem
+    }
+
+    .app-opt {
+      background: var(--s2);
+      border: 1px solid var(--outline);
+      border-radius: 20px;
+      padding: 32px;
+      position: relative;
+      overflow: hidden;
+      transition: all .25s;
+      display: flex;
+      flex-direction: column
+    }
+
+    .app-opt:hover {
+      border-color: var(--gold-bdr);
+      box-shadow: 0 0 40px rgba(201, 168, 76, .07);
+      transform: translateY(-3px)
+    }
+
+    .app-opt.featured {
+      border-color: var(--gold-bdr);
+      background: linear-gradient(145deg, #0f0c00, #0E0F13)
+    }
+
+    .opt-badge {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 20px
+    }
+
+    .badge-web {
+      background: rgba(201, 168, 76, .12);
+      color: var(--gold);
+      border: 1px solid rgba(201, 168, 76, .2)
+    }
+
+    .badge-apk {
+      background: rgba(61, 189, 125, .12);
+      color: var(--green);
+      border: 1px solid rgba(61, 189, 125, .2)
+    }
+
+    .opt-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      margin-bottom: 20px;
+      flex-shrink: 0
+    }
+
+    .ico-web {
+      background: rgba(201, 168, 76, .1);
+      border: 1px solid rgba(201, 168, 76, .2)
+    }
+
+    .ico-apk {
+      background: rgba(61, 189, 125, .1);
+      border: 1px solid rgba(61, 189, 125, .2)
+    }
+
+    .opt-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+      letter-spacing: 1.5px;
+      margin-bottom: 8px
+    }
+
+    .opt-desc {
+      font-size: 14px;
+      color: var(--light);
+      line-height: 1.65;
+      margin-bottom: 20px;
+      flex: 1
+    }
+
+    .opt-feats {
+      list-style: none;
+      margin-bottom: 24px
+    }
+
+    .opt-feats li {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-size: 13px;
+      color: var(--light);
+      padding: 5px 0;
+      border-bottom: 1px solid var(--outline)
+    }
+
+    .opt-feats li:last-child {
+      border: none
+    }
+
+    .opt-feats li::before {
+      content: '';
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--gold);
+      flex-shrink: 0
+    }
+
+    .opt-btn-p {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 14px 20px;
+      background: var(--gold);
+      color: var(--black);
+      border-radius: var(--radius-sm);
+      font-weight: 700;
+      font-size: 14px;
+      text-decoration: none;
+      transition: all .2s;
+      border: none;
+      cursor: pointer;
+      width: 100%
+    }
+
+    .opt-btn-p:hover {
+      background: var(--gold-l);
+      box-shadow: 0 6px 20px rgba(201, 168, 76, .3)
+    }
+
+    .opt-btn-s {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 14px 20px;
+      background: transparent;
+      color: var(--gold);
+      border-radius: var(--radius-sm);
+      font-weight: 700;
+      font-size: 14px;
+      text-decoration: none;
+      transition: all .2s;
+      border: 1px solid var(--gold-bdr);
+      cursor: pointer;
+      width: 100%
+    }
+
+    .opt-btn-s:hover {
+      background: var(--gold-bg);
+      border-color: var(--gold)
+    }
+
+    .opt-sub {
+      text-align: center;
+      font-size: 11.5px;
+      color: var(--muted);
+      margin-top: 10px
+    }
+
+    @media(max-width:900px) {
+      .get-app {
+        padding: 4rem 1.5rem
+      }
+
+      .app-options {
+        grid-template-columns: 1fr
+      }
+    }
+
+    /* APK GUIDE */
+    .apk-guide {
+      background: var(--s3);
+      border: 1px solid var(--outline);
+      border-radius: 16px;
+      padding: 24px
+    }
+
+    .apk-guide-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 14px
+    }
+
+    .apk-steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px
+    }
+
+    .apk-step {
+      text-align: center
+    }
+
+    .apk-step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--gold-bg);
+      border: 1px solid var(--gold-bdr);
+      color: var(--gold);
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 8px
+    }
+
+    .apk-step-title {
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 3px
+    }
+
+    .apk-step-desc {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.5
+    }
+
+    @media(max-width:768px) {
+      .apk-steps {
+        grid-template-columns: 1fr 1fr
+      }
+    }
+
+    /* FOOTER */
+    footer {
+      background: var(--surface);
+      border-top: 1px solid var(--outline);
+      padding: 3rem 4rem 2rem
+    }
+
+    .footer-inner {
+      max-width: 1100px;
+      margin: 0 auto
+    }
+
+    .footer-top {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr;
+      gap: 3rem;
+      margin-bottom: 3rem
+    }
+
+    .f-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      letter-spacing: 3px;
+      color: var(--gold);
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 12px;
+      text-decoration: none
+    }
+
+    .f-logo-mark {
+      width: 30px;
+      height: 30px;
+      background: var(--gold);
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: var(--black)
+    }
+
+    .f-logo span {
+      color: var(--cream)
+    }
+
+    .f-desc {
+      font-size: 13px;
+      color: var(--light);
+      line-height: 1.65;
+      max-width: 240px
+    }
+
+    .f-col-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 14px
+    }
+
+    .f-links {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px
+    }
+
+    .f-links a {
+      font-size: 13.5px;
+      color: var(--light);
+      text-decoration: none;
+      transition: color .2s
+    }
+
+    .f-links a:hover {
+      color: var(--gold)
+    }
+
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 24px;
+      border-top: 1px solid var(--outline);
+      font-size: 12px;
+      color: var(--muted)
+    }
+
+    .stacks {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap
+    }
+
+    .chip {
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: var(--s3);
+      border: 1px solid var(--outline);
+      font-size: 11px;
+      color: var(--muted)
+    }
+
+    @media(max-width:768px) {
+      footer {
+        padding: 3rem 1.5rem 2rem
+      }
+
+      .footer-top {
+        grid-template-columns: 1fr;
+        gap: 2rem
+      }
+
+      .footer-bottom {
+        flex-direction: column;
+        gap: 12px;
+        text-align: center
+      }
+    }
+
+    /* UTILS */
+    .scissors-div {
+      text-align: center;
+      padding: 1.5rem;
+      color: rgba(201, 168, 76, .2);
+      font-size: 1.2rem;
+      letter-spacing: 12px;
+      user-select: none
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(32px);
+      transition: opacity .65s ease, transform .65s ease
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0)
+    }
+  </style>
 </head>
+
 <body>
 
-<div class="cursor" id="cursor"></div>
-<div class="cursor-ring" id="cursorRing"></div>
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
 
-<!-- NAV -->
-<nav id="mainNav">
-  <a href="#home" class="nav-logo">
-    <div class="nav-logo-mark">✂</div>
-    Barber<span>Book</span>
-  </a>
-  <ul class="nav-links">
-    <li><a href="#problem">Problem</a></li>
-    <li><a href="#features">Features</a></li>
-    <li><a href="#how">How It Works</a></li>
-    <li><a href="#roles">Who It's For</a></li>
-    <li><a href="#get-app">Get the App</a></li>
-    <li><a href="calculator.html">Calculator</a></li>
-  </ul>
-  <div class="nav-ctas">
-    <a href="barberbook.apk" class="nav-ghost" id="navApk">↓ APK Download</a>
-    <a href="barberbook_v3/app.html" class="nav-solid">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-      Open Web App
+  <!-- NAV -->
+  <nav id="mainNav">
+    <a href="#home" class="nav-logo">
+      <div class="nav-logo-mark">✂</div>
+      Barber<span>Book</span>
     </a>
-  </div>
-  <button class="hamburger" id="hamburger">
-    <span></span><span></span><span></span>
-  </button>
-</nav>
-
-<div class="mob-menu" id="mobMenu">
-  <a href="#problem">The Problem</a>
-  <a href="#features">Features</a>
-  <a href="#how">How It Works</a>
-  <a href="#roles">Who It's For</a>
-  <a href="#get-app">Get the App</a>
-  <a href="calculator.html">Calculator</a>
-  <div class="mob-ctas">
-    <a href="barberbook.apk" class="opt-btn-s" style="font-size:13px;padding:11px 14px;" id="mobApk">↓ Download APK</a>
-    <a href="barberbook_v3/app.html" class="opt-btn-p" style="font-size:13px;padding:11px 14px;">Open Web App →</a>
-  </div>
-</div>
-
-<!-- HERO -->
-<section class="hero" id="home">
-  <div class="hero-inner">
-    <div>
-      <div class="hero-tag"><div class="hero-dot"></div>Now Live · Free to Use</div>
-      <h1 class="hero-title">SKIP<br>THE <span class="gold">WAIT.</span><br><span class="outline">BOOK</span> SMARTER.</h1>
-      <p class="hero-desc">Real-time barber shop scheduling built for India. Get your token, see the live queue, walk in exactly when it's your turn. No waiting. No guessing.</p>
-      <div class="hero-ctas">
-        <a href="barberbook_v3/app.html" class="btn-primary" id="heroWeb">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-          Open Web App
-        </a>
-        <a href="barberbook.apk" class="btn-secondary" id="heroApk">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-          Download APK
-        </a>
-      </div>
-      <div class="hero-proof">
-        <div class="proof-avs">
-          <div class="pav" style="background:#C9A84C;">AS</div>
-          <div class="pav" style="background:#4B9FE0;">RK</div>
-          <div class="pav" style="background:#3DBD7D;">MV</div>
-          <div class="pav" style="background:#E09B33;">DJ</div>
-        </div>
-        <div class="proof-text"><strong>Real-world tested</strong> with a local shop</div>
-        <div class="proof-sep"></div>
-        <div class="proof-text">✓ Live queue · No refresh</div>
-      </div>
+    <ul class="nav-links">
+      <li><a href="#problem">Problem</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#how">How It Works</a></li>
+      <li><a href="#roles">Who It's For</a></li>
+      <li><a href="#get-app">Get the App</a></li>
+    </ul>
+    <div class="nav-ctas">
+      <a href="https://github.com/jashjson/barberbook/releases/download/app/barberbook.apk" class="nav-ghost"
+        id="navApk">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        Download Android
+      </a>
+      <a href="/app" class="nav-solid">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7" />
+          <rect x="14" y="3" width="7" height="7" />
+          <rect x="14" y="14" width="7" height="7" />
+          <rect x="3" y="14" width="7" height="7" />
+        </svg>
+        Open Web App
+      </a>
     </div>
+    <button class="hamburger" id="hamburger">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
 
-    <!-- PHONE -->
-    <div style="display:flex;justify-content:center;align-items:center;">
-      <div class="phone-frame">
-        <div class="ph-notch"></div>
-        <div class="ph-status"><span id="phClock">9:41</span><span>●●● WiFi 🔋</span></div>
-        <div class="ph-screen">
-          <div class="ph-header">
-            <div class="ph-logo">✂ BB</div>
-            <div class="ph-av">A</div>
+  <div class="mob-menu" id="mobMenu">
+    <a href="#problem">The Problem</a>
+    <a href="#features">Features</a>
+    <a href="#how">How It Works</a>
+    <a href="#roles">Who It's For</a>
+    <a href="#get-app">Get the App</a>
+    <div class="mob-ctas">
+      <a href="https://github.com/jashjson/barberbook/releases/download/app/barberbook.apk" class="opt-btn-s"
+        style="font-size:13px;padding:11px 14px;" id="mobApk">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        Download Android
+      </a>
+      <a href="/app" class="opt-btn-p" style="font-size:13px;padding:11px 14px;">Open Web App →</a>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <section class="hero" id="home">
+    <div class="hero-inner">
+      <div>
+        <div class="hero-tag">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+          </svg>
+          Professional Queue Management
+        </div>
+        <h1 class="hero-title">SKIP<br>THE <span class="gold">WAIT.</span><br><span class="outline">BOOK</span> SMARTER.
+        </h1>
+        <p class="hero-desc">Real-time barber shop scheduling built for India. Get your token, see the live queue, walk
+          in exactly when it's your turn. No waiting. No guessing.</p>
+        <div class="hero-ctas">
+          <a href="/app" class="btn-primary" id="heroWeb">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7" />
+              <rect x="14" y="3" width="7" height="7" />
+              <rect x="14" y="14" width="7" height="7" />
+              <rect x="3" y="14" width="7" height="7" />
+            </svg>
+            Open Web App
+          </a>
+          <a href="https://github.com/jashjson/barberbook/releases/download/app/barberbook.apk" class="btn-secondary"
+            id="heroApk">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Download Android
+          </a>
+        </div>
+        <div class="hero-proof">
+          <div class="proof-avs">
+            <div class="pav" style="background:#C9A84C;">AS</div>
+            <div class="pav" style="background:#4B9FE0;">RK</div>
+            <div class="pav" style="background:#3DBD7D;">MV</div>
+            <div class="pav" style="background:#E09B33;">DJ</div>
           </div>
-          <div class="ph-token">
-            <div class="ph-tok-tag">Your Token</div>
-            <div class="ph-tok-num">#04</div>
-            <div class="ph-tok-sub">Classic Cut · Barber Ravi</div>
-            <div class="ph-tok-meta">
-              <div><div class="ph-tm-val">11:20 AM</div><div class="ph-tm-key">Slot</div></div>
-              <div><div class="ph-tm-val">~12 min</div><div class="ph-tm-key">Est. Wait</div></div>
-              <div><div class="ph-tm-val">3 ahead</div><div class="ph-tm-key">In Queue</div></div>
+          <div class="proof-text"><strong>Trusted</strong> by barber shops across India</div>
+          <div class="proof-sep"></div>
+          <div class="proof-text">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            Real-time synchronization
+          </div>
+        </div>
+      </div>
+
+      <!-- PHONE -->
+      <div style="display:flex;justify-content:center;align-items:center;">
+        <div class="phone-frame">
+          <div class="ph-notch"></div>
+          <div class="ph-status"><span id="phClock">9:41</span><span>●●● WiFi 🔋</span></div>
+          <div class="ph-screen">
+            <div class="ph-header">
+              <div class="ph-logo">✂ BB</div>
+              <div class="ph-av">A</div>
+            </div>
+            <div class="ph-token">
+              <div class="ph-tok-tag">Your Token</div>
+              <div class="ph-tok-num">#04</div>
+              <div class="ph-tok-sub">Classic Cut · Barber Ravi</div>
+              <div class="ph-tok-meta">
+                <div>
+                  <div class="ph-tm-val">11:20 AM</div>
+                  <div class="ph-tm-key">Slot</div>
+                </div>
+                <div>
+                  <div class="ph-tm-val">~12 min</div>
+                  <div class="ph-tm-key">Est. Wait</div>
+                </div>
+                <div>
+                  <div class="ph-tm-val">3 ahead</div>
+                  <div class="ph-tm-key">In Queue</div>
+                </div>
+              </div>
+            </div>
+            <div class="ph-q-title">
+              <div class="ph-ldot"></div>Live Queue
+            </div>
+            <div class="ph-qi">
+              <div class="ph-qn">01</div>
+              <div class="ph-qi-info">
+                <div class="ph-qi-name">Karthik M.</div>
+                <div class="ph-qi-sub">10:00 · Fade</div>
+              </div><span class="ph-bdg bdg-active">In Chair</span>
+            </div>
+            <div class="ph-qi">
+              <div class="ph-qn">02</div>
+              <div class="ph-qi-info">
+                <div class="ph-qi-name">Deepak R.</div>
+                <div class="ph-qi-sub">10:30 · Trim</div>
+              </div><span class="ph-bdg bdg-wait">Waiting</span>
+            </div>
+            <div class="ph-qi">
+              <div class="ph-qn">03</div>
+              <div class="ph-qi-info">
+                <div class="ph-qi-name">Vikram S.</div>
+                <div class="ph-qi-sub">11:00 · Style</div>
+              </div><span class="ph-bdg bdg-wait">Waiting</span>
+            </div>
+            <div class="ph-qi"
+              style="background:rgba(201,168,76,.04);border-radius:8px;padding:8px 6px;margin-top:2px;">
+              <div class="ph-qn">04</div>
+              <div class="ph-qi-info">
+                <div class="ph-qi-name" style="color:var(--gold);">You</div>
+                <div class="ph-qi-sub">11:20 · Classic</div>
+              </div><span class="ph-bdg bdg-you">YOU</span>
             </div>
           </div>
-          <div class="ph-q-title"><div class="ph-ldot"></div>Live Queue</div>
-          <div class="ph-qi"><div class="ph-qn">01</div><div class="ph-qi-info"><div class="ph-qi-name">Karthik M.</div><div class="ph-qi-sub">10:00 · Fade</div></div><span class="ph-bdg bdg-active">In Chair</span></div>
-          <div class="ph-qi"><div class="ph-qn">02</div><div class="ph-qi-info"><div class="ph-qi-name">Deepak R.</div><div class="ph-qi-sub">10:30 · Trim</div></div><span class="ph-bdg bdg-wait">Waiting</span></div>
-          <div class="ph-qi"><div class="ph-qn">03</div><div class="ph-qi-info"><div class="ph-qi-name">Vikram S.</div><div class="ph-qi-sub">11:00 · Style</div></div><span class="ph-bdg bdg-wait">Waiting</span></div>
-          <div class="ph-qi" style="background:rgba(201,168,76,.04);border-radius:8px;padding:8px 6px;margin-top:2px;"><div class="ph-qn">04</div><div class="ph-qi-info"><div class="ph-qi-name" style="color:var(--gold);">You</div><div class="ph-qi-sub">11:20 · Classic</div></div><span class="ph-bdg bdg-you">YOU</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <div class="stats reveal">
+    <div class="stat">
+      <div class="stat-n">₹80K Cr</div>
+      <div class="stat-l">Grooming Market</div>
+    </div>
+    <div class="stat">
+      <div class="stat-n">5 Lakh+</div>
+      <div class="stat-l">Barber Shops</div>
+    </div>
+    <div class="stat">
+      <div class="stat-n">&lt;3%</div>
+      <div class="stat-l">Digitised Today</div>
+    </div>
+    <div class="stat">
+      <div class="stat-n">0 min</div>
+      <div class="stat-l">Your Wait Time</div>
+    </div>
+  </div>
+
+  <!-- PROBLEM -->
+  <div id="problem">
+    <div class="wrap">
+      <div class="sec-tag reveal">The Problem</div>
+      <h2 class="sec-title reveal">Barber Shops Are<br><span class="gold">Stuck in 1995.</span></h2>
+      <p class="sec-desc reveal">5 lakh+ shops across India. Less than 3% use any digital booking. Customers wait.
+        Barbers lose revenue. Nobody wins.</p>
+      <div class="problem-grid reveal">
+        <div class="problem-card">
+          <div class="pc-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M12 8v4"></path>
+              <path d="M12 16h.01"></path>
+            </svg>
+          </div>
+          <div class="pc-title">Uncertain Wait Times</div>
+          <div class="pc-desc">Walk in, sit down, and wonder. Zero visibility into queue position or estimated wait
+            time.</div>
+        </div>
+        <div class="problem-card">
+          <div class="pc-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path
+                d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z">
+              </path>
+            </svg>
+          </div>
+          <div class="pc-title">Manual Booking Systems</div>
+          <div class="pc-desc">Phone calls and WhatsApp messages. Slots get forgotten, double-booked, or simply ignored.
+          </div>
+        </div>
+        <div class="problem-card">
+          <div class="pc-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="1" x2="12" y2="23"></line>
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            </svg>
+          </div>
+          <div class="pc-title">Revenue Loss</div>
+          <div class="pc-desc">No-shows and last-minute cancellations create gaps that can't be filled, directly
+            impacting daily earnings.</div>
+        </div>
+        <div class="problem-card">
+          <div class="pc-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"></line>
+              <line x1="12" y1="20" x2="12" y2="4"></line>
+              <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+          </div>
+          <div class="pc-title">No Business Intelligence</div>
+          <div class="pc-desc">No data on peak hours, customer patterns, or revenue trends. Decisions made on gut
+            feeling alone.</div>
         </div>
       </div>
     </div>
   </div>
-  
-  <!-- Calculator Button -->
-  <button id="calcBtn" style="position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:50%;background:var(--gold);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 12px rgba(201,168,76,0.3);transition:all 0.2s;z-index:100;" title="Calculator">
-    🔢
-  </button>
-</section>
 
-<!-- STATS -->
-<div class="stats reveal">
-  <div class="stat"><div class="stat-n">₹80K Cr</div><div class="stat-l">Grooming Market</div></div>
-  <div class="stat"><div class="stat-n">5 Lakh+</div><div class="stat-l">Barber Shops</div></div>
-  <div class="stat"><div class="stat-n">&lt;3%</div><div class="stat-l">Digitised Today</div></div>
-  <div class="stat"><div class="stat-n">0 min</div><div class="stat-l">Your Wait Time</div></div>
-</div>
+  <div class="scissors-div">✦ ✂ ✦</div>
 
-<!-- PROBLEM -->
-<div id="problem">
-  <div class="wrap">
-    <div class="sec-tag reveal">The Problem</div>
-    <h2 class="sec-title reveal">Barber Shops Are<br><span class="gold">Stuck in 1995.</span></h2>
-    <p class="sec-desc reveal">5 lakh+ shops across India. Less than 3% use any digital booking. Customers wait. Barbers lose revenue. Nobody wins.</p>
-    <div class="problem-grid reveal">
-      <div class="problem-card"><div class="pc-icon">😤</div><div class="pc-title">You Wait. And Wait.</div><div class="pc-desc">Walk in, sit on a plastic chair, stare at a wall. Zero visibility into how long you'll actually be there.</div></div>
-      <div class="problem-card"><div class="pc-icon">📞</div><div class="pc-title">Booking via WhatsApp</div><div class="pc-desc">Shops "book" over phone or WhatsApp. Slots get forgotten. Customers show up to a full queue anyway.</div></div>
-      <div class="problem-card"><div class="pc-icon">💸</div><div class="pc-title">Barbers Lose Revenue</div><div class="pc-desc">No-shows and cancellations leave barbers with dead time and income they can never recover.</div></div>
-      <div class="problem-card"><div class="pc-icon">📊</div><div class="pc-title">Zero Data for Owners</div><div class="pc-desc">No footfall data. No peak hour insights. No revenue tracking. Owners flying completely blind.</div></div>
-    </div>
-  </div>
-</div>
-
-<div class="scissors-div">✦ ✂ ✦</div>
-
-<!-- FEATURES -->
-<section class="feat-section" id="features">
-  <div class="feat-inner">
-    <div class="sec-tag reveal">Features</div>
-    <h2 class="sec-title reveal">Everything a Barber Shop<br><span class="gold">Actually Needs.</span></h2>
-    <div class="feat-grid reveal">
-      <div class="feat-card"><div class="feat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div class="feat-title">Token Queue System</div><div class="feat-desc">FCFS token assignment. Book online, get your number, know your position before leaving home.</div></div>
-      <div class="feat-card"><div class="feat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div><div class="feat-title">Real-time Updates</div><div class="feat-desc">WebSocket-powered live queue. Every phone updates instantly when status changes — no refresh.</div></div>
-      <div class="feat-card"><div class="feat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg></div><div class="feat-title">Choose Your Barber</div><div class="feat-desc">Independent queue per barber. Pick who you want, see their availability, book directly.</div></div>
-      <div class="feat-card"><div class="feat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div class="feat-title">Easy Reschedule</div><div class="feat-desc">Cancel or reschedule with one tap. Your freed slot becomes available for others instantly.</div></div>
-      <div class="feat-card"><div class="feat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div><div class="feat-title">Owner Analytics</div><div class="feat-desc">Daily revenue, peak hours, barber performance — all in a clean dashboard built for shop owners.</div></div>
-      <div class="feat-card"><div class="feat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div><div class="feat-title">Push Notifications</div><div class="feat-desc">Customers get notified when their turn is close. Fewer no-shows. Less idle time. More revenue.</div></div>
-    </div>
-  </div>
-</section>
-
-<!-- HOW -->
-<div id="how">
-  <div class="wrap">
-    <div class="sec-tag reveal">How It Works</div>
-    <h2 class="sec-title reveal">Book in <span class="gold">4 Steps.</span></h2>
-    <div class="how-grid reveal">
-      <div class="how-step"><div class="how-num">1</div><div class="how-title">Open the App</div><div class="how-desc">Find your nearest listed barber shop on web or Android app.</div></div>
-      <div class="how-step"><div class="how-num">2</div><div class="how-title">Pick a Slot</div><div class="how-desc">Choose your barber and a time. See real availability before you commit.</div></div>
-      <div class="how-step"><div class="how-num">3</div><div class="how-title">Get Your Token</div><div class="how-desc">Receive your token number and estimated wait time instantly.</div></div>
-      <div class="how-step"><div class="how-num">4</div><div class="how-title">Walk In On Time</div><div class="how-desc">Show up at your slot. Sit down, get cut, walk out. No waiting.</div></div>
-    </div>
-  </div>
-</div>
-
-<!-- ROLES -->
-<section class="roles-section" id="roles">
-  <div class="roles-inner">
-    <div class="sec-tag reveal">Who It's For</div>
-    <h2 class="sec-title reveal">One App. <span class="gold">Three Roles.</span></h2>
-    <p class="sec-desc reveal">Register once with a phone number and password. Pick your role — Customer, Barber, or Shop Owner. You cannot switch roles; create a new account for a different role.</p>
-    <div class="roles-grid reveal">
-      <div class="role-card">
-        <div class="role-top"><div class="role-av av-c">C</div><div><div class="role-name">Customer</div><div class="role-sub-tag">Book &amp; Track</div></div></div>
-        <div class="rf"><div class="rf-dot"></div>Book a slot at any listed shop</div>
-        <div class="rf"><div class="rf-dot"></div>See live queue position in real time</div>
-        <div class="rf"><div class="rf-dot"></div>Choose your preferred barber</div>
-        <div class="rf"><div class="rf-dot"></div>Cancel or reschedule with one tap</div>
-        <div class="rf"><div class="rf-dot"></div>Full booking history &amp; spend tracking</div>
-      </div>
-      <div class="role-card">
-        <div class="role-top"><div class="role-av av-b">B</div><div><div class="role-name">Barber</div><div class="role-sub-tag">Manage Your Queue</div></div></div>
-        <div class="rf"><div class="rf-dot"></div>Live personal queue dashboard</div>
-        <div class="rf"><div class="rf-dot"></div>Mark customers done or skip</div>
-        <div class="rf"><div class="rf-dot"></div>Set availability and break times</div>
-        <div class="rf"><div class="rf-dot"></div>View today's full schedule</div>
-        <div class="rf"><div class="rf-dot"></div>Track daily earnings per service</div>
-      </div>
-      <div class="role-card">
-        <div class="role-top"><div class="role-av av-o">O</div><div><div class="role-name">Shop Owner</div><div class="role-sub-tag">Run Your Business</div></div></div>
-        <div class="rf"><div class="rf-dot"></div>Shop-wide booking dashboard</div>
-        <div class="rf"><div class="rf-dot"></div>Revenue analytics &amp; peak hours</div>
-        <div class="rf"><div class="rf-dot"></div>Manage staff and availability</div>
-        <div class="rf"><div class="rf-dot"></div>Configure services and pricing</div>
-        <div class="rf"><div class="rf-dot"></div>Barber performance comparison</div>
+  <!-- FEATURES -->
+  <section class="feat-section" id="features">
+    <div class="feat-inner">
+      <div class="sec-tag reveal">Features</div>
+      <h2 class="sec-title reveal">Everything a Barber Shop<br><span class="gold">Actually Needs.</span></h2>
+      <div class="feat-grid reveal">
+        <div class="feat-card">
+          <div class="feat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg></div>
+          <div class="feat-title">Token Queue System</div>
+          <div class="feat-desc">FCFS token assignment. Book online, get your number, know your position before leaving
+            home.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+            </svg></div>
+          <div class="feat-title">Real-time Updates</div>
+          <div class="feat-desc">WebSocket-powered live queue. Every phone updates instantly when status changes — no
+            refresh.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="6" cy="6" r="3" />
+              <circle cx="6" cy="18" r="3" />
+              <line x1="20" y1="4" x2="8.12" y2="15.88" />
+              <line x1="14.47" y1="14.48" x2="20" y2="20" />
+              <line x1="8.12" y1="8.12" x2="12" y2="12" />
+            </svg></div>
+          <div class="feat-title">Choose Your Barber</div>
+          <div class="feat-desc">Independent queue per barber. Pick who you want, see their availability, book directly.
+          </div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg></div>
+          <div class="feat-title">Easy Reschedule</div>
+          <div class="feat-desc">Cancel or reschedule with one tap. Your freed slot becomes available for others
+            instantly.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10" />
+              <line x1="12" y1="20" x2="12" y2="4" />
+              <line x1="6" y1="20" x2="6" y2="14" />
+            </svg></div>
+          <div class="feat-title">Owner Analytics</div>
+          <div class="feat-desc">Daily revenue, peak hours, barber performance — all in a clean dashboard built for shop
+            owners.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg></div>
+          <div class="feat-title">Push Notifications</div>
+          <div class="feat-desc">Customers get notified when their turn is close. Fewer no-shows. Less idle time. More
+            revenue.</div>
+        </div>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- ══ GET THE APP ══ -->
-<section class="get-app" id="get-app">
-  <div class="get-app-inner">
-    <div class="get-app-hd reveal">
-      <div class="get-app-tag">Get BarberBook</div>
-      <h2 class="get-app-title">Choose Your<br><span class="gold">Platform.</span></h2>
-      <p class="get-app-sub">BarberBook is available as a full-featured web application and a native Android APK. Both connect to the same real-time backend — pick whichever suits you.</p>
-    </div>
-
-    <div class="app-options reveal">
-      <!-- WEB APP -->
-      <div class="app-opt featured">
-        <span class="opt-badge badge-web">Recommended</span>
-        <div class="opt-icon ico-web">🌐</div>
-        <div class="opt-title">Web App</div>
-        <div class="opt-desc">The complete BarberBook experience in your browser. No install needed — open the link and you're in. Works on any device.</div>
-        <ul class="opt-feats">
-          <li>No download or installation required</li>
-          <li>Works on Android, iOS &amp; desktop</li>
-          <li>All 3 roles — Customer, Barber, Owner</li>
-          <li>Real-time queue via WebSockets</li>
-          <li>Register with your phone number</li>
-        </ul>
-        <a href="barberbook_v3/app.html" class="opt-btn-p">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-          Open Web App
-        </a>
-        <div class="opt-sub">Free · No credit card · Instant access</div>
-      </div>
-
-      <!-- APK -->
-      <div class="app-opt">
-        <span class="opt-badge badge-apk">Android</span>
-        <div class="opt-icon ico-apk">📱</div>
-        <div class="opt-title">Android APK</div>
-        <div class="opt-desc">Native Flutter app. Faster, feels like a proper mobile app, works better on older Android devices. Requires sideloading from this page.</div>
-        <ul class="opt-feats">
-          <li>Native Android performance</li>
-          <li>Works offline (queue cached locally)</li>
-          <li>Push notifications for your turn</li>
-          <li>Android 6.0+ · ~22 MB</li>
-          <li>Sideload — no Play Store needed</li>
-        </ul>
-        <a href="barberbook.apk" class="opt-btn-s" id="apkDlBtn">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></svg>
-          Download APK
-        </a>
-        <div class="opt-sub">v1.0.0 · Android 6.0+ · Free · No ads</div>
-      </div>
-    </div>
-
-    <!-- APK Install Steps -->
-    <div class="apk-guide reveal">
-      <div class="apk-guide-title">How to sideload the APK on Android</div>
-      <div class="apk-steps">
-        <div class="apk-step"><div class="apk-step-num">1</div><div class="apk-step-title">Download</div><div class="apk-step-desc">Tap Download APK above. The file saves to your Downloads folder.</div></div>
-        <div class="apk-step"><div class="apk-step-num">2</div><div class="apk-step-title">Allow Install</div><div class="apk-step-desc">Settings → Security → enable "Install from Unknown Sources" (one-time).</div></div>
-        <div class="apk-step"><div class="apk-step-num">3</div><div class="apk-step-title">Open APK</div><div class="apk-step-desc">Open Downloads, tap the BarberBook APK, then tap Install.</div></div>
-        <div class="apk-step"><div class="apk-step-num">4</div><div class="apk-step-title">Book Away</div><div class="apk-step-desc">Open BarberBook, register your account, never wait at a barber again.</div></div>
+  <!-- HOW -->
+  <div id="how">
+    <div class="wrap">
+      <div class="sec-tag reveal">How It Works</div>
+      <h2 class="sec-title reveal">Book in <span class="gold">4 Steps.</span></h2>
+      <div class="how-grid reveal">
+        <div class="how-step">
+          <div class="how-num">1</div>
+          <div class="how-title">Open the App</div>
+          <div class="how-desc">Find your nearest listed barber shop on web or Android app.</div>
+        </div>
+        <div class="how-step">
+          <div class="how-num">2</div>
+          <div class="how-title">Pick a Slot</div>
+          <div class="how-desc">Choose your barber and a time. See real availability before you commit.</div>
+        </div>
+        <div class="how-step">
+          <div class="how-num">3</div>
+          <div class="how-title">Get Your Token</div>
+          <div class="how-desc">Receive your token number and estimated wait time instantly.</div>
+        </div>
+        <div class="how-step">
+          <div class="how-num">4</div>
+          <div class="how-title">Walk In On Time</div>
+          <div class="how-desc">Show up at your slot. Sit down, get cut, walk out. No waiting.</div>
+        </div>
       </div>
     </div>
   </div>
-</section>
 
-<!-- FOOTER -->
-<footer>
-  <div class="footer-inner">
-    <div class="footer-top">
-      <div>
-        <a href="#home" class="f-logo"><div class="f-logo-mark">✂</div>Barber<span>Book</span></a>
-        <p class="f-desc">Real-time barber shop scheduling for India. Token-based queue that eliminates waiting for customers and maximises revenue for shops.</p>
-      </div>
-      <div>
-        <div class="f-col-title">Product</div>
-        <ul class="f-links">
-          <li><a href="barberbook_v3/app.html">Open Web App</a></li>
-          <li><a href="barberbook.apk">Android APK</a></li>
-          <li><a href="#features">Features</a></li>
-          <li><a href="#how">How It Works</a></li>
-        </ul>
-      </div>
-      <div>
-        <div class="f-col-title">For Business</div>
-        <ul class="f-links">
-          <li><a href="/app/register">List Your Shop</a></li>
-          <li><a href="/app/register">Barber Sign Up</a></li>
-          <li><a href="#roles">Who It's For</a></li>
-          <li><a href="#problem">Why BarberBook</a></li>
-        </ul>
+  <!-- ROLES -->
+  <section class="roles-section" id="roles">
+    <div class="roles-inner">
+      <div class="sec-tag reveal">Who It's For</div>
+      <h2 class="sec-title reveal">One App. <span class="gold">Three Roles.</span></h2>
+      <p class="sec-desc reveal">Register once with a phone number and password. Pick your role — Customer, Barber, or
+        Shop Owner. You cannot switch roles; create a new account for a different role.</p>
+      <div class="roles-grid reveal">
+        <div class="role-card">
+          <div class="role-top">
+            <div class="role-av av-c">C</div>
+            <div>
+              <div class="role-name">Customer</div>
+              <div class="role-sub-tag">Book &amp; Track</div>
+            </div>
+          </div>
+          <div class="rf">
+            <div class="rf-dot"></div>Book a slot at any listed shop
+          </div>
+          <div class="rf">
+            <div class="rf-dot"></div>See live queue position in real time
+          </div>
+          <div class="rf">
+            <div class="rf-dot"></div>Choose your preferred barber
+          </div>
+          <div class="rf">
+            <div class="rf-dot"></div>Cancel or reschedule with one tap
+          </div>
+          <div class="rf">
+            <div class="rf-dot"></div>Full booking history &amp; spend tracking
+          </div>
+        </div>
+        <div class="role-card">
+          <div class="role-top">
+            <div class="role-av av-b">B</div>
+            <div>
+              <div class="role-name">Barber</div>
+              <div class="role-sub-tag">Manage Your Queue</div>
+            </div>
+          </div>
+          <div class="rf">
+            <div class="rf-dot"></div>Live personal queue dashboard
+          </div>
+          <div class="rf">
+            <div class="rf-dot"></div>Mark customers done or skip
+          </div>
+          <div class="rf">
+            <div class="rf-dot"></div>Set availability and break times
+          </div>
+          <div class="rf">
+            <div class="rf-dot"></div>View today's full schedule
+          </div>
+          <div class="rf">
+            <div class="rf-dot"></div>Track daily earnings per service
+          </div>
+        </div>
+        <div class="role-card">
+          <div class="role-top">
+            <div class="role-av av-o">O</div>
+            <div>
+              <div class="role-name">Shop Owner</div>
+              <div class="role-sub-tag">Run Your Business</div>
+            </div>
+          </div>
+          <div class="rf">
+            <div class="rf-dot"></div>Shop-wide booking dashboard
+          </div>
+          <div class="rf">
+            <div class="rf-dot"></div>Revenue analytics &amp; peak hours
+          </div>
+          <div class="rf">
+            <div class="rf-dot"></div>Manage staff and availability
+          </div>
+          <div class="rf">
+            <div class="rf-dot"></div>Configure services and pricing
+          </div>
+          <div class="rf">
+            <div class="rf-dot"></div>Barber performance comparison
+          </div>
+        </div>
       </div>
     </div>
-    <div class="footer-bottom">
-      <div>© 2025 BarberBook · Built for India · All rights reserved</div>
-      <div class="stacks">
-        <span class="chip">Flutter</span>
-        <span class="chip">React</span>
-        <span class="chip">Supabase</span>
-        <span class="chip">Firebase</span>
-        <span class="chip">Cloudflare</span>
+  </section>
+
+  <!-- ══ GET THE APP ══ -->
+  <section class="get-app" id="get-app">
+    <div class="get-app-inner">
+      <div class="get-app-hd reveal">
+        <div class="get-app-tag">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path
+              d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z">
+            </path>
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+          </svg>
+          Platform Options
+        </div>
+        <h2 class="get-app-title">Choose Your<br><span class="gold">Platform.</span></h2>
+        <p class="get-app-sub">Access BarberBook through our web application or native Android app. Both platforms offer
+          the complete feature set with real-time synchronization.</p>
+      </div>
+
+      <div class="app-options reveal">
+        <!-- WEB APP -->
+        <div class="app-opt featured">
+          <span class="opt-badge badge-web">Recommended</span>
+          <div class="opt-icon ico-web">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z">
+              </path>
+            </svg>
+          </div>
+          <div class="opt-title">Web Application</div>
+          <div class="opt-desc">Access the complete BarberBook platform through your browser. No installation required —
+            works seamlessly across all devices and operating systems.</div>
+          <ul class="opt-feats">
+            <li>No download or installation required</li>
+            <li>Works on Android, iOS &amp; desktop</li>
+            <li>All 3 roles — Customer, Barber, Owner</li>
+            <li>Real-time queue via WebSockets</li>
+            <li>Register with your phone number</li>
+          </ul>
+          <a href="/app" class="opt-btn-p">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7" />
+              <rect x="14" y="3" width="7" height="7" />
+              <rect x="14" y="14" width="7" height="7" />
+              <rect x="3" y="14" width="7" height="7" />
+            </svg>
+            Open Web App
+          </a>
+          <div class="opt-sub">Instant access · Cross-platform compatibility</div>
+        </div>
+
+        <!-- APK -->
+        <div class="app-opt">
+          <span class="opt-badge badge-apk">Android</span>
+          <div class="opt-icon ico-apk">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+              <line x1="12" y1="18" x2="12.01" y2="18"></line>
+            </svg>
+          </div>
+          <div class="opt-title">Android Application</div>
+          <div class="opt-desc">Native mobile experience optimized for Android devices. Enhanced performance with
+            offline capabilities and push notifications for queue updates.</div>
+          <ul class="opt-feats">
+            <li>Native Android performance</li>
+            <li>Offline queue caching</li>
+            <li>Push notifications</li>
+            <li>Android 6.0+ · 22 MB</li>
+            <li>Direct download · No Play Store</li>
+          </ul>
+          <a href="https://github.com/jashjson/barberbook/releases/download/app/barberbook.apk" class="opt-btn-s"
+            id="apkDlBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Download Android App
+          </a>
+          <div class="opt-sub">Version 1.0.0 · Secure sideload installation</div>
+        </div>
+      </div>
+
+      <!-- Android Installation Guide -->
+      <div class="apk-guide reveal">
+        <div class="apk-guide-title">Android Installation Instructions</div>
+        <div class="apk-steps">
+          <div class="apk-step">
+            <div class="apk-step-num">1</div>
+            <div class="apk-step-title">Download</div>
+            <div class="apk-step-desc">Tap Download above. File saves to your Downloads folder.</div>
+          </div>
+          <div class="apk-step">
+            <div class="apk-step-num">2</div>
+            <div class="apk-step-title">Enable Installation</div>
+            <div class="apk-step-desc">Settings → Security → Enable "Unknown Sources" (one-time setup).</div>
+          </div>
+          <div class="apk-step">
+            <div class="apk-step-num">3</div>
+            <div class="apk-step-title">Install</div>
+            <div class="apk-step-desc">Open Downloads, tap the APK file, then tap Install.</div>
+          </div>
+          <div class="apk-step">
+            <div class="apk-step-num">4</div>
+            <div class="apk-step-title">Launch</div>
+            <div class="apk-step-desc">Open BarberBook and register your account to get started.</div>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-</footer>
+  </section>
 
-<script>
-// Cursor
-const cur=document.getElementById('cursor'),ring=document.getElementById('cursorRing')
-let mx=0,my=0,rx=0,ry=0
-document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px'})
-;(function a(){rx+=(mx-rx)*.13;ry+=(my-ry)*.13;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(a)})()
-document.querySelectorAll('a,button').forEach(el=>{
-  el.addEventListener('mouseenter',()=>{cur.style.transform='translate(-50%,-50%) scale(2)';ring.style.opacity='.2'})
-  el.addEventListener('mouseleave',()=>{cur.style.transform='translate(-50%,-50%) scale(1)';ring.style.opacity='1'})
-})
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div>
+          <a href="#home" class="f-logo">
+            <div class="f-logo-mark">✂</div>Barber<span>Book</span>
+          </a>
+          <p class="f-desc">Real-time barber shop scheduling for India. Token-based queue that eliminates waiting for
+            customers and maximises revenue for shops.</p>
+        </div>
+        <div>
+          <div class="f-col-title">Product</div>
+          <ul class="f-links">
+            <li><a href="/app">Open Web App</a></li>
+            <li><a href="https://github.com/jashjson/barberbook/releases/download/app/barberbook.apk">Android App</a>
+            </li>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#how">How It Works</a></li>
+          </ul>
+        </div>
+        <div>
+          <div class="f-col-title">For Business</div>
+          <ul class="f-links">
+            <li><a href="/app/register">List Your Shop</a></li>
+            <li><a href="/app/register">Barber Sign Up</a></li>
+            <li><a href="#roles">Who It's For</a></li>
+            <li><a href="#problem">Why BarberBook</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <div>© 2026 BarberBook · Built for India · All rights reserved</div>
+      </div>
+    </div>
+  </footer>
 
-// Nav scroll
-const nav=document.getElementById('mainNav')
-window.addEventListener('scroll',()=>{
-  nav.style.background=window.scrollY>40?'rgba(6,7,10,.96)':'rgba(6,7,10,.88)'
-},{passive:true})
-
-// Mobile menu
-const hbg=document.getElementById('hamburger'),mob=document.getElementById('mobMenu')
-hbg.addEventListener('click',()=>{
-  mob.classList.toggle('open')
-  const sp=hbg.querySelectorAll('span')
-  if(mob.classList.contains('open')){sp[0].style.transform='translateY(7px) rotate(45deg)';sp[1].style.opacity='0';sp[2].style.transform='translateY(-7px) rotate(-45deg)'}
-  else{sp.forEach(s=>{s.style.transform='';s.style.opacity=''})}
-})
-mob.querySelectorAll('a[href^="#"]').forEach(a=>a.addEventListener('click',()=>{mob.classList.remove('open');hbg.querySelectorAll('span').forEach(s=>{s.style.transform='';s.style.opacity=''})}))
-
-// Scroll reveal
-const ro=new IntersectionObserver(entries=>{entries.forEach((e,i)=>{if(e.isIntersecting)setTimeout(()=>e.target.classList.add('visible'),i*70)})},{threshold:.1,rootMargin:'0px 0px -40px 0px'})
-document.querySelectorAll('.reveal').forEach(el=>ro.observe(el))
-
-// Phone clock
-;(function phClk(){const n=new Date();document.getElementById('phClock').textContent=(n.getHours()%12||12)+':'+(n.getMinutes()<10?'0'+n.getMinutes():n.getMinutes());setTimeout(phClk,30000)})()
-
-// APK placeholder toast (remove when real APK is ready)
-function toast(msg){
-  const old=document.querySelector('.bb-toast');if(old)old.remove()
-  const t=document.createElement('div');t.className='bb-toast'
-  t.textContent=msg
-  t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1A1C22;border:1px solid rgba(201,168,76,.25);border-radius:8px;padding:11px 20px;font-size:13px;font-weight:600;color:#F2EEE6;z-index:9999;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,.5);font-family:"DM Sans",sans-serif;animation:tin .25s ease'
-  document.head.insertAdjacentHTML('beforeend','<style>@keyframes tin{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}</style>')
-  document.body.appendChild(t)
-  setTimeout(()=>t.remove(),3000)
-}
-
-// Wire up all APK buttons — swap href for real URL when APK is ready
-// e.g. https://github.com/your-org/barberbook/releases/latest/download/barberbook.apk
-const APK_READY = false // set true when APK file exists
-const apkBtns = ['navApk','heroApk','apkDlBtn','mobApk']
-apkBtns.forEach(id=>{
-  const btn=document.getElementById(id)
-  if(!btn)return
-  if(!APK_READY){
-    btn.addEventListener('click',e=>{
-      e.preventDefault()
-      toast('APK coming soon — use the Web App now! 🌐')
+  <script>
+    // Cursor
+    const cur = document.getElementById('cursor'), ring = document.getElementById('cursorRing')
+    let mx = 0, my = 0, rx = 0, ry = 0
+    document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; cur.style.left = mx + 'px'; cur.style.top = my + 'px' })
+      ; (function a() { rx += (mx - rx) * .13; ry += (my - ry) * .13; ring.style.left = rx + 'px'; ring.style.top = ry + 'px'; requestAnimationFrame(a) })()
+    document.querySelectorAll('a,button').forEach(el => {
+      el.addEventListener('mouseenter', () => { cur.style.transform = 'translate(-50%,-50%) scale(2)'; ring.style.opacity = '.2' })
+      el.addEventListener('mouseleave', () => { cur.style.transform = 'translate(-50%,-50%) scale(1)'; ring.style.opacity = '1' })
     })
-  }
-  // When APK is ready just remove the listener — the href handles it
-})
-</script>
+
+    // Nav scroll
+    const nav = document.getElementById('mainNav')
+    window.addEventListener('scroll', () => {
+      nav.style.background = window.scrollY > 40 ? 'rgba(6,7,10,.96)' : 'rgba(6,7,10,.88)'
+    }, { passive: true })
+
+    // Mobile menu
+    const hbg = document.getElementById('hamburger'), mob = document.getElementById('mobMenu')
+    hbg.addEventListener('click', () => {
+      mob.classList.toggle('open')
+      const sp = hbg.querySelectorAll('span')
+      if (mob.classList.contains('open')) { sp[0].style.transform = 'translateY(7px) rotate(45deg)'; sp[1].style.opacity = '0'; sp[2].style.transform = 'translateY(-7px) rotate(-45deg)' }
+      else { sp.forEach(s => { s.style.transform = ''; s.style.opacity = '' }) }
+    })
+    mob.querySelectorAll('a[href^="#"]').forEach(a => a.addEventListener('click', () => { mob.classList.remove('open'); hbg.querySelectorAll('span').forEach(s => { s.style.transform = ''; s.style.opacity = '' }) }))
+
+    // Scroll reveal
+    const ro = new IntersectionObserver(entries => { entries.forEach((e, i) => { if (e.isIntersecting) setTimeout(() => e.target.classList.add('visible'), i * 70) }) }, { threshold: .1, rootMargin: '0px 0px -40px 0px' })
+    document.querySelectorAll('.reveal').forEach(el => ro.observe(el))
+
+      // Phone clock
+      ; (function phClk() { const n = new Date(); document.getElementById('phClock').textContent = (n.getHours() % 12 || 12) + ':' + (n.getMinutes() < 10 ? '0' + n.getMinutes() : n.getMinutes()); setTimeout(phClk, 30000) })()
+
+    // APK downloads are now enabled - all buttons link directly to GitHub release
+  </script>
 </body>
+
 </html>

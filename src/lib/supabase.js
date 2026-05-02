@@ -273,7 +273,10 @@ export const bookings = {
   cancel: (id, userId) =>
     supabase.from('bookings')
       .update({ status: 'cancelled', updated_at: new Date().toISOString() })
-      .eq('id', id).eq('user_id', userId),
+      .eq('id', id)
+      .eq('user_id', userId)
+      .select()
+      .single(),
   
   cancelByBarber: (id) =>
     supabase.from('bookings')

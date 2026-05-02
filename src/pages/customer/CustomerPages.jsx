@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { useCustomerBooking, useAvailableSlots } from '../../hooks/useQueue'
-import { bookings as bookingsApi, shops as shopsApi, barbers as barbersApi } from '../../lib/supabase'
+import { bookings as bookingsApi, shops as shopsApi, barbers as barbersApi, shopBarbers as shopBarbersApi } from '../../lib/supabase'
 import { profiles } from '../../lib/supabase'
 import { format } from 'date-fns'
 import Icon from '../../components/ui/Icon'
@@ -187,8 +187,15 @@ export function CustomerBook() {
 
   const pickShop = async (shop) => {
     setSelectedShop(shop)
-    const { data } = await barbersApi.getByShop(shop.id)
-    setShopBarbers(data || [])
+    const { data } = await shopBarbersApi.getActiveByShop(shop.id)
+    // Transform shop_barbers data to match the expected barber format
+    const barbers = (data || []).map(link => ({
+      id: link.barber_id,
+      name: link.profiles?.name || 'Barber',
+      is_available: link.is_available,
+      profile_id: link.barber_id
+    }))
+    setShopBarbers(barbers)
     setStep(2)
   }
 
@@ -216,9 +223,34 @@ export function CustomerBook() {
     
     setLoading(true)
     const slotDT = `${selectedDate}T${selectedSlot}:00`
+    
+    // Find or create barber record for backward compatibility
+    const { data: existingBarbers } = await barbersApi.getByShop(selectedShop.id)
+    let existingBarber = existingBarbers?.find(b => b.profile_id === selectedBarber.id)
+    
+    if (!existingBarber) {
+      // Create a barber record for this profile if it doesn't exist
+      const { data: newBarber, error: barberError } = await barbersApi.create({
+        shop_id: selectedShop.id,
+        profile_id: selectedBarber.id,
+        name: selectedBarber.name,
+        is_available: true,
+        is_active: true
+      })
+      
+      if (barberError) {
+        console.error('Failed to create barber record:', barberError)
+        setLoading(false)
+        toast('Failed to create booking. Please try again.', 'error')
+        return
+      }
+      
+      existingBarber = newBarber
+    }
+    
     const { data, error } = await bookingsApi.create({
       shop_id: selectedShop.id,
-      barber_id: selectedBarber.id,
+      barber_id: existingBarber.id,
       user_id: profile.id,
       service: selectedService.label,
       price: selectedService.price,

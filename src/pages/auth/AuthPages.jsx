@@ -7,185 +7,6 @@ import Icon from '../../components/ui/Icon'
 import { Spinner, Modal } from '../../components/ui/Primitives'
 
 // ─────────────────────────────────────────────────────────────────
-//  CALCULATOR COMPONENT (for fun!)
-// ─────────────────────────────────────────────────────────────────
-function Calculator({ onClose }) {
-  const [display, setDisplay] = useState('0')
-  const [prevValue, setPrevValue] = useState(null)
-  const [operation, setOperation] = useState(null)
-  const [newNumber, setNewNumber] = useState(true)
-
-  const handleNumber = (num) => {
-    if (newNumber) {
-      setDisplay(String(num))
-      setNewNumber(false)
-    } else {
-      setDisplay(display === '0' ? String(num) : display + num)
-    }
-  }
-
-  const handleDecimal = () => {
-    if (newNumber) {
-      setDisplay('0.')
-      setNewNumber(false)
-    } else if (!display.includes('.')) {
-      setDisplay(display + '.')
-    }
-  }
-
-  const handleOperation = (op) => {
-    const current = parseFloat(display)
-    if (prevValue === null) {
-      setPrevValue(current)
-    } else if (operation) {
-      const result = calculate(prevValue, current, operation)
-      setDisplay(String(result))
-      setPrevValue(result)
-    }
-    setOperation(op)
-    setNewNumber(true)
-  }
-
-  const calculate = (a, b, op) => {
-    switch (op) {
-      case '+': return a + b
-      case '-': return a - b
-      case '×': return a * b
-      case '÷': return b !== 0 ? a / b : 0
-      default: return b
-    }
-  }
-
-  const handleEquals = () => {
-    if (operation && prevValue !== null) {
-      const current = parseFloat(display)
-      const result = calculate(prevValue, current, operation)
-      setDisplay(String(result))
-      setPrevValue(null)
-      setOperation(null)
-      setNewNumber(true)
-    }
-  }
-
-  const handleClear = () => {
-    setDisplay('0')
-    setPrevValue(null)
-    setOperation(null)
-    setNewNumber(true)
-  }
-
-  const handleBackspace = () => {
-    if (display.length > 1) {
-      setDisplay(display.slice(0, -1))
-    } else {
-      setDisplay('0')
-      setNewNumber(true)
-    }
-  }
-
-  const buttons = [
-    ['C', '⌫', '÷'],
-    ['7', '8', '9', '×'],
-    ['4', '5', '6', '-'],
-    ['1', '2', '3', '+'],
-    ['0', '.', '=', 'Copy'],
-  ]
-
-  const handleCopy = () => {
-    const expression = operation && prevValue !== null 
-      ? `${prevValue} ${operation} ${display}`
-      : display
-    
-    navigator.clipboard.writeText(expression).then(() => {
-      // Visual feedback - you could add a toast here if you want
-    }).catch(err => {
-      console.error('Failed to copy:', err)
-    })
-  }
-
-  return (
-    <Modal title="Calculator" onClose={onClose} maxWidth={320}>
-      <div style={{ 
-        background: 'var(--surface-2)', 
-        borderRadius: 'var(--radius-sm)', 
-        padding: '16px 12px',
-        marginBottom: 16
-      }}>
-        <div style={{ 
-          fontSize: 32, 
-          fontWeight: 700, 
-          textAlign: 'right', 
-          fontFamily: 'monospace',
-          color: 'var(--gold)',
-          minHeight: 48,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'flex-end',
-          wordBreak: 'break-all'
-        }}>
-          {display}
-        </div>
-        {operation && (
-          <div style={{ 
-            fontSize: 12, 
-            textAlign: 'right', 
-            color: 'var(--text-tertiary)',
-            marginTop: 4
-          }}>
-            {prevValue} {operation}
-          </div>
-        )}
-      </div>
-
-      <div style={{ display: 'grid', gap: 8 }}>
-        {buttons.map((row, i) => (
-          <div key={i} style={{ display: 'grid', gridTemplateColumns: row.length === 3 ? '1fr 1fr 1fr' : row.length === 4 && i === 4 ? '2fr 1fr 1fr 1fr' : '1fr 1fr 1fr 1fr', gap: 8 }}>
-            {row.map(btn => {
-              const isOperation = ['÷', '×', '-', '+', '='].includes(btn)
-              const isSpecial = ['C', '⌫'].includes(btn)
-              const isCopy = btn === 'Copy'
-              const isZero = btn === '0'
-              
-              return (
-                <button
-                  key={btn}
-                  onClick={() => {
-                    if (btn === 'C') handleClear()
-                    else if (btn === '⌫') handleBackspace()
-                    else if (btn === '=') handleEquals()
-                    else if (btn === '.') handleDecimal()
-                    else if (btn === 'Copy') handleCopy()
-                    else if (isOperation) handleOperation(btn)
-                    else handleNumber(btn)
-                  }}
-                  style={{
-                    padding: '16px',
-                    fontSize: isCopy ? 13 : 18,
-                    fontWeight: 600,
-                    border: 'none',
-                    borderRadius: 'var(--radius-sm)',
-                    background: isOperation ? 'var(--gold)' : isCopy ? 'var(--surface-4)' : isSpecial ? 'var(--surface-4)' : 'var(--surface-3)',
-                    color: isOperation ? 'var(--black)' : 'var(--text-primary)',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s',
-                    fontFamily: 'inherit',
-                    gridColumn: isZero ? 'span 1' : 'span 1',
-                  }}
-                  onMouseEnter={e => e.target.style.transform = 'scale(0.95)'}
-                  onMouseLeave={e => e.target.style.transform = 'scale(1)'}
-                >
-                  {btn}
-                </button>
-              )
-            })}
-          </div>
-        ))}
-      </div>
-    </Modal>
-  )
-}
-
-// ─────────────────────────────────────────────────────────────────
 //  SHARED: Hero panel (right side on desktop)
 // ─────────────────────────────────────────────────────────────────
 function AuthHero({ title, sub }) {
@@ -295,7 +116,6 @@ export function LoginPage() {
   const [showPw, setShowPw]   = useState(false)
   const [loading, setLoading] = useState(false)
   const [errors, setErrors]   = useState({})
-  const [showCalc, setShowCalc] = useState(false) // Calculator state
 
   const validate = () => {
     const e = {}
@@ -453,50 +273,12 @@ export function LoginPage() {
         >
           Create an account
         </Link>
-
-        {/* Calculator Button - Because why not! */}
-        <button
-          type="button"
-          onClick={() => setShowCalc(true)}
-          style={{
-            position: 'fixed',
-            bottom: 24,
-            right: 24,
-            width: 56,
-            height: 56,
-            borderRadius: '50%',
-            background: 'var(--gold)',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 24,
-            boxShadow: '0 4px 12px rgba(201,168,76,0.3)',
-            transition: 'all 0.2s',
-            zIndex: 100,
-          }}
-          onMouseEnter={e => {
-            e.target.style.transform = 'scale(1.1)'
-            e.target.style.boxShadow = '0 6px 16px rgba(201,168,76,0.4)'
-          }}
-          onMouseLeave={e => {
-            e.target.style.transform = 'scale(1)'
-            e.target.style.boxShadow = '0 4px 12px rgba(201,168,76,0.3)'
-          }}
-          title="Calculator"
-        >
-          🔢
-        </button>
       </div>
 
       <AuthHero
         title="WELCOME<br/><span>BACK.</span>"
         sub="Continue managing your bookings, queue, and shop in real time."
       />
-
-      {/* Calculator Modal */}
-      {showCalc && <Calculator onClose={() => setShowCalc(false)} />}
     </div>
   )
 }
