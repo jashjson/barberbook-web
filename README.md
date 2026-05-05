@@ -36,7 +36,7 @@ barberbook/
 ```
 
 ---
-
+## Complete Setup Guide
 ## How Roles Work
 
 Each user has exactly **one role** (customer / barber / owner), set at registration. **You cannot switch roles** — you must create separate accounts. This ensures real-world security: a barber cannot see another shop's data.
