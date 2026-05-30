@@ -271,15 +271,10 @@ export function CustomerBook() {
     // This will be silently ignored if the column doesn't exist
     bookingData.barber_profile_id = selectedBarber.id
     
-    console.log('[CustomerBook] Creating booking with:', bookingData)
-    
     const { data, error } = await bookingsApi.create(bookingData)
-    
-    console.log('[CustomerBook] Booking creation response:', { data, error })
     
     setLoading(false)
     if (error) { 
-      console.error('[CustomerBook] Booking error:', error)
       toast(error.message || 'Booking failed', 'error')
       return 
     }

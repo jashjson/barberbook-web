@@ -94,6 +94,23 @@ export function StatusBadge({ status, isYou }) {
   return <span className={`badge ${cls}`}>{label}</span>
 }
 
+// ── DATE SELECTOR ─────────────────────────────────────────────────────────────
+export function DateSelector({ value, onChange, label = "Select Date", minDate, maxDate }) {
+  return (
+    <div className="form-field mb-4" style={{ marginBottom: 20 }}>
+      <label className="form-label">{label}</label>
+      <input 
+        type="date" 
+        className="form-input" 
+        value={value}
+        min={minDate}
+        max={maxDate}
+        onChange={onChange}
+      />
+    </div>
+  )
+}
+
 // ── CONFIRM DIALOG ────────────────────────────────────────────────────────────
 export function ConfirmDialog({ title, body, onConfirm, onCancel, danger }) {
   return (
@@ -104,5 +121,34 @@ export function ConfirmDialog({ title, body, onConfirm, onCancel, danger }) {
         <button className={`btn flex-1 ${danger ? 'btn-danger' : 'btn-gold'}`} onClick={onConfirm}>Confirm</button>
       </div>
     </Modal>
+  )
+}
+
+
+// ── STAT CARD ─────────────────────────────────────────────────────────────────
+export function StatCard({ value, label, highlight }) {
+  return (
+    <div className={`card stat-card card-pad ${highlight ? 'card-gold-border' : ''}`}>
+      <div className="stat-val">{value}</div>
+      <div className="stat-label">{label}</div>
+    </div>
+  )
+}
+
+// ── QUEUE ITEM ────────────────────────────────────────────────────────────────
+export function QueueItem({ booking, isActive, children }) {
+  return (
+    <div className="q-item" style={isActive ? { background: 'rgba(201,168,76,0.04)' } : {}}>
+      <div className={`q-token ${booking.status === 'in_chair' ? 'active' : isActive ? 'gold' : booking.status === 'done' ? 'gold' : ''}`}>
+        {String(booking.token_no).padStart(2, '0')}
+      </div>
+      <div className="q-info">
+        <div className="q-name" style={isActive ? { color: 'var(--gold)' } : {}}>
+          {booking.profiles?.name || `Customer #${booking.token_no}`}
+        </div>
+        <div className="q-sub">{booking.service}</div>
+      </div>
+      {children}
+    </div>
   )
 }

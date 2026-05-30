@@ -139,12 +139,7 @@ export const shopBarbers = {
       .eq('email', email)
       .maybeSingle()
 
-    console.log('Invite barber - profile lookup:', { email, userProfile, profileError })
-
-    if (profileError) {
-      console.error('Profile lookup error:', profileError)
-      return { error: profileError }
-    }
+    if (profileError) return { error: profileError }
     
     if (!userProfile) {
       return { error: { message: 'No account found with this email. Ask them to sign up first.' } }
@@ -177,8 +172,6 @@ export const shopBarbers = {
       status: 'pending',
       invited_by: ownerId,
     }).select('*').single()
-
-    console.log('Invite barber - insert result:', result)
     
     // If successful, return with the barber profile data we already have
     if (result.data) {
@@ -236,8 +229,6 @@ export const bookings = {
   // NEW: Get barber queue by profile ID (for new schema)
   // Falls back to old schema if barber_profile_id column doesn't exist
   getBarberQueueByProfile: async (barberProfileId, date) => {
-    console.log('[getBarberQueueByProfile] Starting query for profile:', barberProfileId)
-    
     // First, try the new schema with barber_profile_id
     // Specify the foreign key relationship explicitly to avoid ambiguity
     const newSchemaQuery = await supabase.from('bookings')
@@ -248,32 +239,18 @@ export const bookings = {
       .neq('status', 'cancelled')
       .order('token_no', { ascending: true })
     
-    console.log('[getBarberQueueByProfile] New schema query result:', {
-      error: newSchemaQuery.error,
-      dataCount: newSchemaQuery.data?.length || 0
-    })
-    
     // If new schema returns no results, also try the fallback (old schema)
     // This handles the case where barber_profile_id column exists but has no data
     if (!newSchemaQuery.error && newSchemaQuery.data && newSchemaQuery.data.length === 0) {
-      console.log('[getBarberQueueByProfile] New schema returned 0 results, trying fallback as well')
-      
       // Find barber record(s) for this profile
       const { data: barberRecords, error: barberError } = await supabase
         .from('barbers')
         .select('id')
         .eq('profile_id', barberProfileId)
       
-      console.log('[getBarberQueueByProfile] Barber records lookup:', {
-        error: barberError,
-        recordCount: barberRecords?.length || 0,
-        records: barberRecords
-      })
-      
       if (!barberError && barberRecords && barberRecords.length > 0) {
         // Get bookings for all barber records
         const barberIds = barberRecords.map(b => b.id)
-        console.log('[getBarberQueueByProfile] Querying bookings for barber IDs:', barberIds)
         
         const fallbackQuery = await supabase.from('bookings')
           .select('*, profiles!bookings_user_id_fkey(name, phone, avatar_url)')
@@ -283,15 +260,8 @@ export const bookings = {
           .neq('status', 'cancelled')
           .order('token_no', { ascending: true })
         
-        console.log('[getBarberQueueByProfile] Fallback query result:', {
-          error: fallbackQuery.error,
-          dataCount: fallbackQuery.data?.length || 0,
-          data: fallbackQuery.data
-        })
-        
         // Return fallback results if they exist
         if (!fallbackQuery.error && fallbackQuery.data && fallbackQuery.data.length > 0) {
-          console.log('[getBarberQueueByProfile] Using fallback results')
           return fallbackQuery
         }
       }
@@ -299,28 +269,18 @@ export const bookings = {
     
     // If there was an error with new schema, try fallback
     if (newSchemaQuery.error) {
-      console.warn('[getBarberQueueByProfile] New schema failed, trying fallback. Error:', newSchemaQuery.error.message)
-      
       // Find barber record(s) for this profile
       const { data: barberRecords, error: barberError } = await supabase
         .from('barbers')
         .select('id')
         .eq('profile_id', barberProfileId)
       
-      console.log('[getBarberQueueByProfile] Barber records lookup:', {
-        error: barberError,
-        recordCount: barberRecords?.length || 0,
-        records: barberRecords
-      })
-      
       if (barberError || !barberRecords || barberRecords.length === 0) {
-        console.warn('[getBarberQueueByProfile] No barber records found for profile', barberProfileId)
         return { data: [], error: null }
       }
       
       // Get bookings for all barber records
       const barberIds = barberRecords.map(b => b.id)
-      console.log('[getBarberQueueByProfile] Querying bookings for barber IDs:', barberIds)
       
       const fallbackQuery = await supabase.from('bookings')
         .select('*, profiles!bookings_user_id_fkey(name, phone, avatar_url)')
@@ -329,12 +289,6 @@ export const bookings = {
         .lte('slot_time', `${date}T23:59:59`)
         .neq('status', 'cancelled')
         .order('token_no', { ascending: true })
-      
-      console.log('[getBarberQueueByProfile] Fallback query result:', {
-        error: fallbackQuery.error,
-        dataCount: fallbackQuery.data?.length || 0,
-        data: fallbackQuery.data
-      })
       
       return fallbackQuery
     }

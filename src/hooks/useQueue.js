@@ -69,62 +69,36 @@ export function useBarberQueue(barberProfileId) {
   const channelRef = useRef(null)
 
   const fetch = useCallback(async () => {
-    if (!barberProfileId) {
-      console.log('[useBarberQueue] No barberProfileId provided')
-      return
-    }
-    
-    console.log('[useBarberQueue] Fetching queue for profile ID:', barberProfileId)
+    if (!barberProfileId) return
     
     try {
       const { data, error } = await bookingsApi.getBarberQueueByProfile(barberProfileId, today())
-      
-      console.log('[useBarberQueue] Response:', { 
-        dataCount: data?.length || 0, 
-        error: error?.message || error,
-        data: data 
-      })
-      
-      if (error) {
-        console.error('[useBarberQueue] Error fetching barber queue:', error)
-      }
-      
-      // Set queue data even if there's an error (fallback will return empty array)
+      if (error) console.error('Error fetching barber queue:', error)
       setQueue(data || [])
     } catch (err) {
-      console.error('[useBarberQueue] Exception:', err)
+      console.error('Exception in useBarberQueue:', err)
       setQueue([])
     }
   }, [barberProfileId])
 
   useEffect(() => {
     if (!barberProfileId) { 
-      console.log('[useBarberQueue] Effect: No barberProfileId, setting loading false')
       setLoading(false)
       return 
     }
     
-    console.log('[useBarberQueue] Effect: Starting fetch for', barberProfileId)
-    fetch().finally(() => {
-      console.log('[useBarberQueue] Effect: Fetch complete, setting loading false')
-      setLoading(false)
-    })
+    fetch().finally(() => setLoading(false))
 
     // Subscribe to real-time updates using profile ID
     if (!channelRef.current) {
       try {
-        console.log('[useBarberQueue] Subscribing to real-time updates for', barberProfileId)
-        channelRef.current = realtime.subscribeBarberQueueByProfile(barberProfileId, () => {
-          console.log('[useBarberQueue] Real-time update received, refreshing...')
-          fetch()
-        })
+        channelRef.current = realtime.subscribeBarberQueueByProfile(barberProfileId, fetch)
       } catch (err) {
-        console.error('[useBarberQueue] Error subscribing to barber queue:', err)
+        console.error('Error subscribing to barber queue:', err)
       }
     }
     return () => { 
       if (channelRef.current) {
-        console.log('[useBarberQueue] Unsubscribing from real-time updates')
         realtime.unsubscribe(channelRef.current)
         channelRef.current = null
       }
@@ -252,15 +226,6 @@ export function useAvailableSlots(barberProfileId, date, shopHours = { opening: 
   const closeHour = parseHour(shopHours.closing, 19)
   const closeMinute = parseMinute(shopHours.closing)
 
-  console.log('[useAvailableSlots] Shop hours:', {
-    opening: shopHours.opening,
-    closing: shopHours.closing,
-    openHour,
-    openMinute,
-    closeHour,
-    closeMinute
-  })
-
   // Generate slots based on shop operating hours, every 20 min
   const allSlots = []
   const now = new Date()
@@ -297,14 +262,6 @@ export function useAvailableSlots(barberProfileId, date, shopHours = { opening: 
       })
     }
   }
-
-  console.log('[useAvailableSlots] Generated slots:', {
-    totalSlots: allSlots.length,
-    availableSlots: allSlots.filter(s => !s.booked).length,
-    bookedSlots: bookedSlots.length,
-    isToday,
-    date
-  })
 
   return { slots: allSlots, loading }
 }

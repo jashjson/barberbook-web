@@ -440,10 +440,8 @@ export function OwnerShop() {
     if (shop) {
       const { data, error } = await shopsApi.update(shop.id, shopData)
       if (error) {
-        console.error('Shop update error:', error)
         toast(error.message || 'Failed to save', 'error')
       } else { 
-        console.log('Shop updated successfully:', data)
         toast('Shop updated!', 'success')
         refresh() 
       }
@@ -454,10 +452,8 @@ export function OwnerShop() {
         is_active: true 
       })
       if (error) {
-        console.error('Shop create error:', error)
         toast(error.message || 'Failed to create shop', 'error')
       } else { 
-        console.log('Shop created successfully:', data)
         toast('Shop created!', 'success')
         refresh() 
       }

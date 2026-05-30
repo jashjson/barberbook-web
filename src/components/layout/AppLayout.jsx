@@ -11,7 +11,7 @@ const NAV = {
     { path: '/app',            label: 'Home',    icon: 'home' },
     { path: '/app/book',       label: 'Book',    icon: 'calendar' },
     { path: '/app/history',    label: 'History', icon: 'history' },
-    { path: '/app/profile',    label: 'Profile', icon: 'user' },
+    { path: '/app/profile',    label: 'Profile', icon: 'user'},
   ],
   barber: [
     { path: '/app',            label: 'Queue',    icon: 'list' },
