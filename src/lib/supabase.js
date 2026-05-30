@@ -430,3 +430,152 @@ export const realtime = {
 
   unsubscribe: (channel) => supabase.removeChannel(channel),
 }
+
+// ── SERVICES ─────────────────────────────────────────────────────
+export const services = {
+  getByShop: (shopId) =>
+    supabase.from('services')
+      .select('*')
+      .eq('shop_id', shopId)
+      .eq('is_active', true)
+      .order('display_order', { ascending: true }),
+
+  getAll: (shopId) =>
+    supabase.from('services')
+      .select('*')
+      .eq('shop_id', shopId)
+      .order('display_order', { ascending: true }),
+
+  create: (data) =>
+    supabase.from('services').insert(data).select().single(),
+
+  update: (id, data) =>
+    supabase.from('services')
+      .update({ ...data, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single(),
+
+  delete: (id) =>
+    supabase.from('services').delete().eq('id', id),
+
+  reorder: async (shopId, serviceIds) => {
+    // Update display_order for multiple services
+    const updates = serviceIds.map((id, index) => ({
+      id,
+      display_order: index
+    }))
+    
+    const promises = updates.map(({ id, display_order }) =>
+      supabase.from('services')
+        .update({ display_order })
+        .eq('id', id)
+        .eq('shop_id', shopId)
+    )
+    
+    return Promise.all(promises)
+  }
+}
+
+// ── REVIEWS ──────────────────────────────────────────────────────
+export const reviews = {
+  getByShop: (shopId, limit = 50) =>
+    supabase.from('reviews')
+      .select('*, profiles!reviews_user_id_fkey(name, initials, avatar_url), barbers(name)')
+      .eq('shop_id', shopId)
+      .order('created_at', { ascending: false })
+      .limit(limit),
+
+  getByBarber: (barberId, limit = 50) =>
+    supabase.from('reviews')
+      .select('*, profiles!reviews_user_id_fkey(name, initials, avatar_url)')
+      .eq('barber_id', barberId)
+      .order('created_at', { ascending: false })
+      .limit(limit),
+
+  getByBooking: (bookingId) =>
+    supabase.from('reviews')
+      .select('*')
+      .eq('booking_id', bookingId)
+      .maybeSingle(),
+
+  canReview: async (bookingId, userId) => {
+    // Check if booking is done and user hasn't reviewed yet
+    const { data: booking } = await supabase.from('bookings')
+      .select('status, user_id')
+      .eq('id', bookingId)
+      .single()
+    
+    if (!booking || booking.user_id !== userId || booking.status !== 'done') {
+      return { canReview: false, reason: 'Booking not eligible for review' }
+    }
+
+    const { data: existingReview } = await supabase.from('reviews')
+      .select('id')
+      .eq('booking_id', bookingId)
+      .maybeSingle()
+    
+    if (existingReview) {
+      return { canReview: false, reason: 'Already reviewed' }
+    }
+
+    return { canReview: true }
+  },
+
+  create: (data) =>
+    supabase.from('reviews').insert(data).select().single(),
+
+  update: (id, data) =>
+    supabase.from('reviews')
+      .update({ ...data, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single(),
+
+  delete: (id) =>
+    supabase.from('reviews').delete().eq('id', id),
+}
+
+// ── NOTIFICATIONS ────────────────────────────────────────────────
+export const notifications = {
+  getByUser: (userId, limit = 50) =>
+    supabase.from('notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(limit),
+
+  getUnreadCount: (userId) =>
+    supabase.from('notifications')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('is_read', false),
+
+  markAsRead: (id) =>
+    supabase.from('notifications')
+      .update({ is_read: true })
+      .eq('id', id),
+
+  markAllAsRead: (userId) =>
+    supabase.from('notifications')
+      .update({ is_read: true })
+      .eq('user_id', userId)
+      .eq('is_read', false),
+
+  delete: (id) =>
+    supabase.from('notifications').delete().eq('id', id),
+
+  deleteAll: (userId) =>
+    supabase.from('notifications').delete().eq('user_id', userId),
+
+  // Subscribe to real-time notifications
+  subscribe: (userId, callback) =>
+    supabase.channel(`notifications:${userId}`)
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'notifications', 
+        filter: `user_id=eq.${userId}` 
+      }, callback)
+      .subscribe(),
+}

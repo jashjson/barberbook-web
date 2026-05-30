@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { NotificationBell } from '../ui/NotificationCenter'
 import Icon from '../ui/Icon'
 
 const ROLE_COLOR = { customer: 'av-gold', barber: 'av-blue', owner: 'av-green' }
@@ -138,6 +139,7 @@ export function AppLayout({ children }) {
           </div>
         </div>
         <div className="header-right">
+          <NotificationBell />
           <div className="live-indicator">
             <div className="live-dot" /> LIVE
           </div>
