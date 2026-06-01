@@ -75,7 +75,9 @@ export function AppLayout({ children }) {
       {/* ── Sidebar ── */}
       <aside className="sidebar">
         <div className="sb-logo">
-          <div className="sb-logo-mark">✂</div>
+          <div className="sb-logo-mark">
+            <Icon name="scissors" size={18} color="var(--black)" />
+          </div>
           <div>
             <div className="sb-logo-text">Barber<span>Book</span></div>
             <div className="sb-logo-sub">Queue System</div>
@@ -141,9 +143,6 @@ export function AppLayout({ children }) {
         </div>
         <div className="header-right">
           <NotificationBell />
-          <div className="live-indicator">
-            <div className="live-dot" /> LIVE
-          </div>
           <div className={`avatar avatar-md ${avCls}`} style={{ cursor: 'pointer' }} onClick={() => goTo('/app/profile')}>
             {initials}
           </div>

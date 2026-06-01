@@ -30,7 +30,7 @@ export function OwnerDashboard() {
   if (loading) return <div className="page-inner"><Spinner page /></div>
   if (!shop) return (
     <div className="page-inner">
-      <Empty icon="🏪" title="No shop set up yet" sub="Go to 'My Shop' to create your barber shop listing." action={<button onClick={() => navigate('/app/shop')} className="btn btn-gold">Set Up My Shop</button>} />
+      <Empty icon="store" title="No shop set up yet" sub="Go to 'My Shop' to create your barber shop listing." action={<button onClick={() => navigate('/app/shop')} className="btn btn-gold">Set Up My Shop</button>} />
     </div>
   )
 
@@ -79,7 +79,7 @@ export function OwnerDashboard() {
         <div className="card card-pad">
           <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 16 }}>Staff Today</div>
           {shop.barbers?.length === 0 ? (
-            <Empty icon="✂" title="No barbers added" sub="Add staff in the My Shop section." />
+            <Empty icon="users" title="No barbers added" sub="Add staff in the My Shop section." />
           ) : shop.barbers?.map(b => {
             const barberBookings = queue.filter(q => q.barber_id === b.id)
             const barberDone = barberBookings.filter(q => q.status === 'done')

@@ -120,7 +120,7 @@ export function BarberQueue() {
   if (loading || barberLoading) return <div className="page-inner"><Spinner page /></div>
   if (!barber && !barberLoading) return (
     <div className="page-inner">
-      <Empty icon="✂" title="Not set up as barber" sub="Your profile isn't linked to a barbershop yet. Contact your shop owner." />
+      <Empty icon="scissors" title="Not set up as barber" sub="Your profile isn't linked to a barbershop yet. Contact your shop owner." />
     </div>
   )
 
@@ -189,7 +189,7 @@ export function BarberQueue() {
       />
       <div className="card">
         {waiting.length === 0 ? (
-          <Empty icon="🎉" title={isToday ? "Queue is empty" : "No appointments"} sub={isToday ? "No one waiting. Enjoy the break!" : `No appointments scheduled for ${format(new Date(selectedDate), 'd MMM yyyy')}`} />
+          <Empty icon="check" title={isToday ? "Queue is empty" : "No appointments"} sub={isToday ? "No one waiting. Enjoy the break!" : `No appointments scheduled for ${format(new Date(selectedDate), 'd MMM yyyy')}`} />
         ) : waiting.map((q, i) => (
           <div key={q.id} className="q-item">
             <div className={`q-token ${i === 0 ? 'gold' : ''}`}>{String(q.token_no).padStart(2, '0')}</div>

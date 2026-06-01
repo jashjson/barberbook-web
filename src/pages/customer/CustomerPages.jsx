@@ -44,8 +44,8 @@ export function CustomerHome() {
           <div style={{ fontSize: 12, color: 'var(--text-tertiary)', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 4 }}>
             {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
           </div>
-          <div style={{ fontSize: 24, fontWeight: 700 }}>
-            Hello, {profile?.name?.split(' ')[0]} 👋
+          <div style={{ fontSize: 24, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
+            Hello, {profile?.name?.split(' ')[0]}
           </div>
         </div>
       </div>
@@ -85,7 +85,7 @@ export function CustomerHome() {
         </div>
       ) : (
         <div className="card card-gold-border mb-6" style={{ padding: 24, textAlign: 'center' }}>
-          <div style={{ fontSize: 32, marginBottom: 10 }}>✂</div>
+          <Icon name="scissors" size={40} color="var(--gold)" style={{ margin: '0 auto 10px' }} />
           <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 6 }}>No Active Booking</div>
           <div style={{ fontSize: 13, color: 'var(--text-tertiary)', marginBottom: 18 }}>Book a slot at your nearest barber shop and skip the wait.</div>
           <button onClick={() => navigate('/app/book')} className="btn btn-gold">Book a Slot</button>
@@ -121,7 +121,9 @@ export function CustomerHome() {
       <SectionHead title="Shops Near You" />
       {nearbyShops.length > 0 ? nearbyShops.slice(0, 4).map(shop => (
         <div key={shop.id} className="shop-card" onClick={() => navigate('/app/book')}>
-          <div className="shop-icon">✂️</div>
+          <div className="shop-icon">
+            <Icon name="store" size={24} color="var(--gold)" />
+          </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 2 }}>{shop.name}</div>
             <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{shop.address}</div>
@@ -140,7 +142,7 @@ export function CustomerHome() {
           </div>
         </div>
       )) : (
-        <Empty icon="🏪" title="No shops found" sub="Shops will appear here once they register on BarberBook." />
+        <Empty icon="store" title="No shops found" sub="Shops will appear here once they register on BarberBook." />
       )}
 
       {cancelConfirm && (
@@ -282,7 +284,7 @@ export function CustomerBook() {
       return 
     }
     setConfirmed(data)
-    toast('Booking confirmed! 🎉', 'success')
+    toast('Booking confirmed!', 'success')
   }
 
   if (confirmed) return (
@@ -330,10 +332,12 @@ export function CustomerBook() {
       {step === 1 && (
         <div>
           <SectionHead title="Select a Shop" />
-          {allShops.length === 0 ? <Empty icon="🏪" title="No shops available" sub="Check back later." /> :
+          {allShops.length === 0 ? <Empty icon="store" title="No shops available" sub="Check back later." /> :
             allShops.map(shop => (
               <div key={shop.id} className="shop-card" style={{ border: selectedShop?.id === shop.id ? '1px solid var(--gold)' : undefined }} onClick={() => pickShop(shop)}>
-                <div className="shop-icon">✂️</div>
+                <div className="shop-icon">
+                  <Icon name="store" size={24} color="var(--gold)" />
+                </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 3 }}>{shop.name}</div>
                   <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 8 }}>{shop.address}</div>
@@ -499,7 +503,7 @@ export function CustomerHistory() {
       <SectionHead title="Booking History" />
       <div className="card">
         {history.length === 0 ? (
-          <Empty icon="📋" title="No bookings yet" sub="Your booking history will appear here." />
+          <Empty icon="calendar" title="No bookings yet" sub="Your booking history will appear here." />
         ) : history.map(b => (
           <div key={b.id} className="q-item">
             <div className={`q-token ${b.status === 'done' ? 'gold' : ''}`}>{String(b.token_no || '—').padStart(2, '0')}</div>
