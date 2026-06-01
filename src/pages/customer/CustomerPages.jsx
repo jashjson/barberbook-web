@@ -9,6 +9,9 @@ import { format } from 'date-fns'
 import Icon from '../../components/ui/Icon'
 import { Modal, Spinner, Empty, SectionHead, StatusBadge, ConfirmDialog } from '../../components/ui/Primitives'
 
+// Export Discover components
+export { CustomerDiscover, ShopDetails } from './DiscoverPage'
+
 // ── HOME ─────────────────────────────────────────────────────────────────────
 export function CustomerHome() {
   const { profile } = useAuth()

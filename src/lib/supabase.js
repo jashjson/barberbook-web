@@ -579,3 +579,280 @@ export const notifications = {
       }, callback)
       .subscribe(),
 }
+
+// ── FEEDBACK ─────────────────────────────────────────────────────
+export const feedback = {
+  getByShop: (shopId, limit = 50) =>
+    supabase.from('feedback')
+      .select('*, profiles!feedback_user_id_fkey(name, initials, avatar_url)')
+      .eq('shop_id', shopId)
+      .order('created_at', { ascending: false })
+      .limit(limit),
+
+  getByUser: (userId) =>
+    supabase.from('feedback')
+      .select('*, shops(name, cover_image)')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false }),
+
+  create: (data) =>
+    supabase.from('feedback').insert(data).select().single(),
+
+  update: (id, data) =>
+    supabase.from('feedback')
+      .update({ ...data, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single(),
+
+  delete: (id) =>
+    supabase.from('feedback').delete().eq('id', id),
+
+  markHelpful: (feedbackId, userId) =>
+    supabase.from('feedback_helpful')
+      .insert({ feedback_id: feedbackId, user_id: userId }),
+
+  unmarkHelpful: (feedbackId, userId) =>
+    supabase.from('feedback_helpful')
+      .delete()
+      .eq('feedback_id', feedbackId)
+      .eq('user_id', userId),
+
+  isHelpful: async (feedbackId, userId) => {
+    const { data } = await supabase.from('feedback_helpful')
+      .select('id')
+      .eq('feedback_id', feedbackId)
+      .eq('user_id', userId)
+      .maybeSingle()
+    return !!data
+  },
+}
+
+// ── SHOP DISCOVERY ───────────────────────────────────────────────
+export const discover = {
+  searchShops: async (query = '', filters = {}) => {
+    let queryBuilder = supabase.from('shops')
+      .select(`
+        *,
+        shop_images(id, image_url, caption, display_order),
+        shop_amenities(amenity),
+        shop_tags(tag)
+      `)
+      .eq('is_active', true)
+
+    // Search query
+    if (query) {
+      queryBuilder = queryBuilder.or(`name.ilike.%${query}%,description.ilike.%${query}%,address.ilike.%${query}%,area.ilike.%${query}%`)
+    }
+
+    // Filters
+    if (filters.city) {
+      queryBuilder = queryBuilder.ilike('city', filters.city)
+    }
+    if (filters.area) {
+      queryBuilder = queryBuilder.ilike('area', `%${filters.area}%`)
+    }
+    if (filters.minRating) {
+      queryBuilder = queryBuilder.gte('avg_rating', filters.minRating)
+    }
+
+    // Sort
+    const sortBy = filters.sortBy || 'rating'
+    if (sortBy === 'rating') {
+      queryBuilder = queryBuilder.order('avg_rating', { ascending: false })
+    } else if (sortBy === 'reviews') {
+      queryBuilder = queryBuilder.order('feedback_count', { ascending: false })
+    } else if (sortBy === 'name') {
+      queryBuilder = queryBuilder.order('name', { ascending: true })
+    }
+
+    return queryBuilder.limit(filters.limit || 50)
+  },
+
+  getShopDetails: (shopId) =>
+    supabase.from('shops')
+      .select(`
+        *,
+        shop_images(id, image_url, caption, display_order),
+        shop_amenities(amenity),
+        shop_tags(tag),
+        services(id, name, description, price, duration, display_order)
+      `)
+      .eq('id', shopId)
+      .single(),
+
+  getShopStats: async (shopId) => {
+    const { data: feedback } = await supabase.from('feedback')
+      .select('rating')
+      .eq('shop_id', shopId)
+
+    if (!feedback || feedback.length === 0) {
+      return {
+        avgRating: 0,
+        totalReviews: 0,
+        ratingDistribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
+      }
+    }
+
+    const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
+    feedback.forEach(f => distribution[f.rating]++)
+
+    return {
+      avgRating: feedback.reduce((sum, f) => sum + f.rating, 0) / feedback.length,
+      totalReviews: feedback.length,
+      ratingDistribution: distribution
+    }
+  },
+}
+
+// ── SHOP IMAGES ──────────────────────────────────────────────────
+export const shopImages = {
+  getByShop: (shopId) =>
+    supabase.from('shop_images')
+      .select('*')
+      .eq('shop_id', shopId)
+      .order('display_order', { ascending: true }),
+
+  create: (data) =>
+    supabase.from('shop_images').insert(data).select().single(),
+
+  delete: (id) =>
+    supabase.from('shop_images').delete().eq('id', id),
+
+  reorder: async (shopId, imageIds) => {
+    const updates = imageIds.map((id, index) => ({
+      id,
+      display_order: index
+    }))
+    
+    const promises = updates.map(({ id, display_order }) =>
+      supabase.from('shop_images')
+        .update({ display_order })
+        .eq('id', id)
+        .eq('shop_id', shopId)
+    )
+    
+    return Promise.all(promises)
+  },
+}
+
+// ── SHOP AMENITIES ───────────────────────────────────────────────
+export const shopAmenities = {
+  getByShop: (shopId) =>
+    supabase.from('shop_amenities')
+      .select('*')
+      .eq('shop_id', shopId),
+
+  add: (shopId, amenity) =>
+    supabase.from('shop_amenities')
+      .insert({ shop_id: shopId, amenity })
+      .select()
+      .single(),
+
+  remove: (shopId, amenity) =>
+    supabase.from('shop_amenities')
+      .delete()
+      .eq('shop_id', shopId)
+      .eq('amenity', amenity),
+}
+
+// ── SHOP TAGS ────────────────────────────────────────────────────
+export const shopTags = {
+  getByShop: (shopId) =>
+    supabase.from('shop_tags')
+      .select('*')
+      .eq('shop_id', shopId),
+
+  add: (shopId, tag) =>
+    supabase.from('shop_tags')
+      .insert({ shop_id: shopId, tag })
+      .select()
+      .single(),
+
+  remove: (shopId, tag) =>
+    supabase.from('shop_tags')
+      .delete()
+      .eq('shop_id', shopId)
+      .eq('tag', tag),
+
+  // Predefined tags
+  AVAILABLE_TAGS: [
+    'Premium',
+    'Budget-Friendly',
+    'Kids-Friendly',
+    'Beard-Specialist',
+    'Styling-Expert',
+    'Quick-Service',
+    'Walk-In-Welcome',
+    'Appointment-Only',
+    'Unisex',
+    'Men-Only',
+  ],
+}
+
+// ── STORAGE / IMAGE UPLOAD ───────────────────────────────────────
+export const storage = {
+  // Upload image to Supabase Storage
+  uploadImage: async (file, bucket = 'feedback-images', folder = '') => {
+    try {
+      // Generate unique filename
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${folder ? folder + '/' : ''}${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+      
+      // Upload file
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
+
+      if (error) throw error
+
+      // Get public URL - use data.path from upload response
+      const { data: urlData } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(data.path)
+
+      console.log('Upload successful:', { path: data.path, url: urlData.publicUrl })
+
+      return { data: { path: data.path, url: urlData.publicUrl }, error: null }
+    } catch (error) {
+      console.error('Upload error:', error)
+      return { data: null, error }
+    }
+  },
+
+  // Upload multiple images
+  uploadImages: async (files, bucket = 'feedback-images', folder = '') => {
+    const uploads = await Promise.all(
+      Array.from(files).map(file => storage.uploadImage(file, bucket, folder))
+    )
+    
+    const errors = uploads.filter(u => u.error)
+    if (errors.length > 0) {
+      return { data: null, error: errors[0].error }
+    }
+    
+    return { 
+      data: uploads.map(u => u.data.url), 
+      error: null 
+    }
+  },
+
+  // Delete image from storage
+  deleteImage: async (path, bucket = 'feedback-images') => {
+    return supabase.storage
+      .from(bucket)
+      .remove([path])
+  },
+
+  // Get public URL for an image
+  getPublicUrl: (path, bucket = 'feedback-images') => {
+    const { data } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(path)
+    return data.publicUrl
+  },
+}
+

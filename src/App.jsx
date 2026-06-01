@@ -4,7 +4,7 @@ import { AppLayout } from './components/layout/AppLayout'
 import { ProtectedRoute, PublicRoute } from './components/layout/ProtectedRoute'
 
 import { LoginPage, RegisterPage } from './pages/auth/AuthPages'
-import { CustomerHome, CustomerBook, CustomerHistory, CustomerProfile } from './pages/customer/CustomerPages'
+import { CustomerHome, CustomerBook, CustomerHistory, CustomerProfile, CustomerDiscover, ShopDetails } from './pages/customer/CustomerPages'
 import { BarberQueue, BarberSchedule, BarberEarnings, BarberProfile } from './pages/barber/BarberPages'
 import { OwnerDashboard, OwnerBookings, OwnerStaff, OwnerShop, OwnerProfile } from './pages/owner/OwnerPages'
 
@@ -12,11 +12,13 @@ import { OwnerDashboard, OwnerBookings, OwnerStaff, OwnerShop, OwnerProfile } fr
 function CustomerRoutes() {
   return (
     <Routes>
-      <Route path="/"        element={<CustomerHome />} />
-      <Route path="/book"    element={<CustomerBook />} />
-      <Route path="/history" element={<CustomerHistory />} />
-      <Route path="/profile" element={<CustomerProfile />} />
-      <Route path="*"        element={<Navigate to="/app" replace />} />
+      <Route path="/"            element={<CustomerHome />} />
+      <Route path="/discover"    element={<CustomerDiscover />} />
+      <Route path="/discover/:shopId" element={<ShopDetails />} />
+      <Route path="/book"        element={<CustomerBook />} />
+      <Route path="/history"     element={<CustomerHistory />} />
+      <Route path="/profile"     element={<CustomerProfile />} />
+      <Route path="*"            element={<Navigate to="/app" replace />} />
     </Routes>
   )
 }
