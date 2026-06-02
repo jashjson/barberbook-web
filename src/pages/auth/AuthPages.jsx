@@ -162,7 +162,9 @@ export function LoginPage() {
       <div className="auth-side">
         {/* Logo */}
         <div className="auth-logo">
-          <div className="auth-logo-mark">✂</div>
+          <div className="auth-logo-mark">
+            <Icon name="scissors" size={18} color="var(--black)" />
+          </div>
           <div className="auth-logo-text">Barber<span>Book</span></div>
         </div>
 
@@ -401,7 +403,9 @@ export function RegisterPage() {
       <div className="auth-side">
         {/* Logo */}
         <div className="auth-logo">
-          <div className="auth-logo-mark">✂</div>
+          <div className="auth-logo-mark">
+            <Icon name="scissors" size={18} color="var(--black)" />
+          </div>
           <div className="auth-logo-text">Barber<span>Book</span></div>
         </div>
 

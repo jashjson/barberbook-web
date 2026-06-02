@@ -175,7 +175,7 @@ export function OwnerBookings() {
 
       <div className="card">
         {filtered.length === 0 ? (
-          <Empty icon="📋" title="No bookings found" sub={`No bookings for ${format(new Date(selectedDate), 'd MMM yyyy')}`} />
+          <Empty icon="calendar" title="No bookings found" sub={`No bookings for ${format(new Date(selectedDate), 'd MMM yyyy')}`} />
         ) : filtered.map(q => (
           <div key={q.id} className="q-item">
             <div className={`q-token ${q.status === 'in_chair' ? 'active' : q.status === 'done' ? 'gold' : ''}`}>
