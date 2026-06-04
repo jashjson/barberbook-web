@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { useCustomerBooking, useAvailableSlots } from '../../hooks/useQueue'
-import { bookings as bookingsApi, shops as shopsApi, barbers as barbersApi, shopBarbers as shopBarbersApi } from '../../lib/supabase'
+import { bookings as bookingsApi, shops as shopsApi, barbers as barbersApi, shopBarbers as shopBarbersApi, storage } from '../../lib/supabase'
 import { profiles } from '../../lib/supabase'
 import { format } from 'date-fns'
 import Icon from '../../components/ui/Icon'
@@ -532,6 +532,7 @@ export function CustomerProfile() {
   const [editing, setEditing] = useState(false)
   const [name, setName] = useState(profile?.name || '')
   const [loading, setLoading] = useState(false)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
 
   const save = async () => {
     if (!name.trim()) return
@@ -542,51 +543,202 @@ export function CustomerProfile() {
     toast('Profile updated', 'success')
   }
 
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.type)) {
+      toast('Only JPG, PNG, and WebP images are allowed', 'error')
+      return
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast('Image must be less than 2MB', 'error')
+      return
+    }
+
+    setUploadingAvatar(true)
+
+    try {
+      // Upload to storage
+      const { data, error } = await storage.uploadImage(file, 'avatars', profile.id)
+      
+      if (error) throw error
+
+      // Update profile with avatar URL
+      await updateProfile({ avatar_url: data.url })
+      toast('Profile picture updated', 'success')
+    } catch (error) {
+      console.error('Avatar upload error:', error)
+      toast('Failed to upload profile picture', 'error')
+    } finally {
+      setUploadingAvatar(false)
+    }
+  }
+
   return (
     <div className="page-inner">
-      {/* Avatar block */}
-      <div className="card card-pad" style={{ textAlign: 'center', marginBottom: 16 }}>
-        <div className="avatar avatar-xl av-gold" style={{ margin: '0 auto 14px', border: '3px solid rgba(201,168,76,0.25)' }}>
-          {profile?.initials || '??'}
-        </div>
-        {editing ? (
-          <div style={{ display: 'flex', gap: 8, maxWidth: 280, margin: '0 auto 12px' }}>
-            <input className="form-input" value={name} onChange={e => setName(e.target.value)} autoFocus />
-            <button className="btn btn-gold btn-sm" onClick={save} disabled={loading}>{loading ? <Spinner /> : 'Save'}</button>
-            <button className="btn btn-ghost btn-sm" onClick={() => setEditing(false)}>✕</button>
+      {/* Profile Card */}
+      <div className="card" style={{ marginBottom: 16, padding: '24px 20px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+          {/* Avatar with Upload */}
+          <div style={{ position: 'relative' }}>
+            {profile?.avatar_url ? (
+              <img 
+                src={profile.avatar_url} 
+                alt={profile.name}
+                style={{
+                  width: 76,
+                  height: 76,
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  border: '3px solid rgba(201,168,76,0.15)'
+                }}
+              />
+            ) : (
+              <div 
+                className="avatar av-gold" 
+                style={{ 
+                  width: 76, 
+                  height: 76, 
+                  fontSize: 24,
+                  border: '3px solid rgba(201,168,76,0.15)' 
+                }}
+              >
+                {profile?.initials || '??'}
+              </div>
+            )}
+            
+            <label 
+              htmlFor="avatar-upload" 
+              style={{
+                position: 'absolute',
+                bottom: -2,
+                right: -2,
+                width: 30,
+                height: 30,
+                borderRadius: '50%',
+                background: 'var(--gold)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: uploadingAvatar ? 'not-allowed' : 'pointer',
+                border: '3px solid var(--surface-2)',
+                opacity: uploadingAvatar ? 0.6 : 1,
+                transition: 'var(--transition)',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.25)'
+              }}
+            >
+              {uploadingAvatar ? (
+                <Spinner size="sm" />
+              ) : (
+                <Icon name="edit" size={13} color="var(--black)" />
+              )}
+              <input
+                id="avatar-upload"
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                onChange={handleAvatarUpload}
+                disabled={uploadingAvatar}
+                style={{ display: 'none' }}
+              />
+            </label>
           </div>
-        ) : (
-          <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 4 }}>{profile?.name}</div>
-        )}
-        <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 4 }}>{profile?.email}</div>
-        {profile?.phone && <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 10 }}>{profile?.phone}</div>}
-        <span className="badge badge-gold">Customer</span>
-        {!editing && <button className="btn btn-ghost btn-sm" onClick={() => setEditing(true)} style={{ marginLeft: 10 }}><Icon name="edit" size={13} />Edit Name</button>}
+
+          {/* Name Edit */}
+          {editing ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%', maxWidth: 320 }}>
+              <input 
+                className="form-input" 
+                value={name} 
+                onChange={e => setName(e.target.value)} 
+                placeholder="Your name"
+                autoFocus 
+                style={{ textAlign: 'center', fontSize: 14, fontWeight: 600 }}
+              />
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button 
+                  className="btn btn-gold btn-sm flex-1" 
+                  onClick={save} 
+                  disabled={loading || !name.trim()}
+                >
+                  {loading ? <Spinner /> : <><Icon name="check" size={13} /> Save</>}
+                </button>
+                <button 
+                  className="btn btn-ghost btn-sm" 
+                  onClick={() => { setEditing(false); setName(profile?.name || '') }}
+                  disabled={loading}
+                  style={{ minWidth: 70 }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div style={{ textAlign: 'center', width: '100%' }}>
+                <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 6, color: 'var(--text-primary)' }}>
+                  {profile?.name}
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 4 }}>
+                  {profile?.email}
+                </div>
+                {profile?.phone && (
+                  <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 12 }}>
+                    {profile?.phone}
+                  </div>
+                )}
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center', marginTop: 10 }}>
+                  <span className="badge badge-gold" style={{ fontSize: 10.5, padding: '3px 10px' }}>Customer</span>
+                  <button 
+                    className="btn btn-ghost btn-sm" 
+                    onClick={() => setEditing(true)}
+                    style={{ fontSize: 12 }}
+                  >
+                    <Icon name="edit" size={12} />
+                    Edit Profile
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
-      <div className="card">
+      {/* Menu Items */}
+      <div className="card" style={{ padding: '6px 12px' }}>
         {[
           { icon: 'history', label: 'Booking History', sub: 'View all past bookings', href: '/app/history' },
-          { icon: 'phone',   label: 'Phone Number',    sub: profile?.phone || 'Not set' },
-          { icon: 'info',    label: 'Help & Support',  sub: 'Contact us at hello@barberbook.in' },
+          { icon: 'phone', label: 'Phone Number', sub: profile?.phone || 'Not set' },
+          { icon: 'info', label: 'Help & Support', sub: 'Contact us at help@barberbook.co.in' },
         ].map((item, i) => (
-          <div key={i} className="menu-item"
+          <div 
+            key={i} 
+            className="profile-menu-item"
             onClick={() => item.href ? navigate(item.href) : null}
-            style={item.href ? {} : { cursor: 'default' }}
+            style={{ cursor: item.href ? 'pointer' : 'default' }}
           >
-            <div className="menu-item-icon"><Icon name={item.icon} size={16} color="var(--gold)" /></div>
-            <div className="menu-item-text">
-              <div className="menu-item-label">{item.label}</div>
-              <div className="menu-item-sub">{item.sub}</div>
+            <div className="profile-menu-icon">
+              <Icon name={item.icon} size={16} color="var(--gold)" />
             </div>
-            {item.href && <Icon name="chevRight" size={14} color="var(--text-tertiary)" />}
+            <div className="profile-menu-content">
+              <div className="profile-menu-label">{item.label}</div>
+              <div className="profile-menu-sub">{item.sub}</div>
+            </div>
+            {item.href && <Icon name="chevRight" size={14} color="var(--text-disabled)" />}
           </div>
         ))}
-        <div className="menu-item" onClick={signOut}>
-          <div className="menu-item-icon danger"><Icon name="logout" size={16} color="var(--red)" /></div>
-          <div className="menu-item-text">
-            <div className="menu-item-label danger">Sign Out</div>
-            <div className="menu-item-sub">You'll need to log back in</div>
+        
+        {/* Sign Out */}
+        <div className="profile-menu-item" onClick={signOut} style={{ cursor: 'pointer' }}>
+          <div className="profile-menu-icon" style={{ background: 'var(--red-bg)' }}>
+            <Icon name="logout" size={16} color="var(--red)" />
+          </div>
+          <div className="profile-menu-content">
+            <div className="profile-menu-label" style={{ color: 'var(--red)' }}>Sign Out</div>
+            <div className="profile-menu-sub">You'll need to log back in</div>
           </div>
         </div>
       </div>

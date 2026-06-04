@@ -579,7 +579,7 @@ export function BarberProfile() {
       <div className="card">
         {[
           { icon: 'phone', label: 'Phone',          sub: profile?.phone || 'Not set' },
-          { icon: 'info',  label: 'Help & Support', sub: 'Contact us at hello@barberbook.in' },
+          { icon: 'info',  label: 'Help & Support', sub: 'Contact us at help@barberbook.co.in' },
         ].map((item, i) => (
           <div key={i} className="menu-item" style={{ cursor: 'default' }}>
             <div className="menu-item-icon"><Icon name={item.icon} size={16} color="var(--blue)" /></div>

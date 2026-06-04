@@ -964,10 +964,25 @@ img { display: block; max-width: 100%; }
   flex-shrink: 0;
 }
 .menu-item-icon.danger { background: var(--red-bg); }
-.menu-item-text { flex: 1; }
-.menu-item-label { font-size: 14px; font-weight: 500; }
+.menu-item-text { 
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+.menu-item-label { 
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+}
 .menu-item-label.danger { color: var(--red); }
-.menu-item-sub { font-size: 11.5px; color: var(--text-tertiary); margin-top: 1px; }
+.menu-item-sub { 
+  font-size: 11.5px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+  line-height: 1.4;
+}
 
 /* ════════════════════════════════════════════════════════
    EMPTY STATE
@@ -1086,6 +1101,49 @@ img { display: block; max-width: 100%; }
 .opacity-50   { opacity: 0.5; }
 .relative     { position: relative; }
 .overflow-hidden { overflow: hidden; }
+
+/* ════════════════════════════════════════════════════════
+   PROFILE MENU ITEMS
+════════════════════════════════════════════════════════ */
+.profile-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 8px;
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+  margin-bottom: 4px;
+}
+.profile-menu-item:last-child { margin-bottom: 0; }
+.profile-menu-item:hover { background: rgba(255,255,255,0.03); }
+.profile-menu-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  background: rgba(201,168,76,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.profile-menu-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.profile-menu-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+.profile-menu-sub {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  line-height: 1.3;
+}
 
 /* ════════════════════════════════════════════════════════
    RESPONSIVE
