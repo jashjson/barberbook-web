@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { useBarberQueue } from '../../hooks/useQueue'
-import { bookings as bookingsApi, barbers as barbersApi, shopBarbers as shopBarbersApi, analytics } from '../../lib/supabase'
+import { bookings as bookingsApi, barbers as barbersApi, shopBarbers as shopBarbersApi, analytics, storage } from '../../lib/supabase'
 import { format, startOfDay } from 'date-fns'
 import Icon from '../../components/ui/Icon'
 import { Spinner, Empty, SectionHead, StatusBadge, Toggle, Modal } from '../../components/ui/Primitives'
@@ -465,6 +465,9 @@ export function BarberProfile() {
   const [myShops, setMyShops] = useState([])
   const [loading, setLoading] = useState(true)
   const [responding, setResponding] = useState(null)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [name, setName] = useState(profile?.name || '')
 
   // Fetch shop links and pending invites
   useEffect(() => {
@@ -502,18 +505,170 @@ export function BarberProfile() {
     }
   }
 
+  const save = async () => {
+    if (!name.trim()) return
+    setLoading(true)
+    await updateProfile({ name: name.trim(), initials: name.trim().split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) })
+    setLoading(false)
+    setEditing(false)
+    toast('Profile updated', 'success')
+  }
+
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.type)) {
+      toast('Only JPG, PNG, and WebP images are allowed', 'error')
+      return
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast('Image must be less than 2MB', 'error')
+      return
+    }
+
+    setUploadingAvatar(true)
+
+    try {
+      const { data, error } = await storage.uploadImage(file, 'avatars', profile.id)
+      if (error) throw error
+      await updateProfile({ avatar_url: data.url })
+      toast('Profile picture updated', 'success')
+    } catch (error) {
+      console.error('Avatar upload error:', error)
+      toast('Failed to upload profile picture', 'error')
+    } finally {
+      setUploadingAvatar(false)
+    }
+  }
+
   return (
     <div className="page-inner">
-      <div className="card card-pad" style={{ textAlign: 'center', marginBottom: 16 }}>
-        <div className="avatar avatar-xl av-blue" style={{ margin: '0 auto 14px', border: '3px solid rgba(74,158,224,0.25)' }}>
-          {profile?.initials || '??'}
+      {/* Profile Card */}
+      <div className="card" style={{ marginBottom: 16, padding: '24px 20px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+          {/* Avatar with Upload */}
+          <div style={{ position: 'relative' }}>
+            {profile?.avatar_url ? (
+              <img 
+                src={profile.avatar_url} 
+                alt={profile.name}
+                style={{
+                  width: 76,
+                  height: 76,
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  border: '3px solid rgba(75,159,224,0.15)'
+                }}
+              />
+            ) : (
+              <div 
+                className="avatar av-blue" 
+                style={{ 
+                  width: 76, 
+                  height: 76, 
+                  fontSize: 24,
+                  border: '3px solid rgba(75,159,224,0.15)' 
+                }}
+              >
+                {profile?.initials || '??'}
+              </div>
+            )}
+            
+            <label 
+              htmlFor="avatar-upload-barber" 
+              style={{
+                position: 'absolute',
+                bottom: -2,
+                right: -2,
+                width: 30,
+                height: 30,
+                borderRadius: '50%',
+                background: 'var(--blue)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: uploadingAvatar ? 'not-allowed' : 'pointer',
+                border: '3px solid var(--surface-2)',
+                opacity: uploadingAvatar ? 0.6 : 1,
+                transition: 'var(--transition)',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.25)'
+              }}
+            >
+              {uploadingAvatar ? (
+                <Spinner size="sm" />
+              ) : (
+                <Icon name="edit" size={13} color="white" />
+              )}
+              <input
+                id="avatar-upload-barber"
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                onChange={handleAvatarUpload}
+                disabled={uploadingAvatar}
+                style={{ display: 'none' }}
+              />
+            </label>
+          </div>
+
+          {/* Name Edit */}
+          {editing ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%', maxWidth: 320 }}>
+              <input 
+                className="form-input" 
+                value={name} 
+                onChange={e => setName(e.target.value)} 
+                placeholder="Your name"
+                autoFocus 
+                style={{ textAlign: 'center', fontSize: 14, fontWeight: 600 }}
+              />
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button 
+                  className="btn btn-blue btn-sm flex-1" 
+                  onClick={save} 
+                  disabled={loading || !name.trim()}
+                  style={{ background: 'var(--blue)', color: 'white' }}
+                >
+                  {loading ? <Spinner /> : <><Icon name="check" size={13} /> Save</>}
+                </button>
+                <button 
+                  className="btn btn-ghost btn-sm" 
+                  onClick={() => { setEditing(false); setName(profile?.name || '') }}
+                  disabled={loading}
+                  style={{ minWidth: 70 }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div style={{ textAlign: 'center', width: '100%' }}>
+                <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 6, color: 'var(--text-primary)' }}>
+                  {profile?.name}
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 4 }}>
+                  {barber?.shops?.name || (myShops.length > 0 ? myShops[0].shops.name : 'No shop assigned')}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 12 }}>
+                  {profile?.email}
+                </div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center', marginTop: 10 }}>
+                  <span className="badge badge-blue" style={{ fontSize: 10.5, padding: '3px 10px' }}>Barber</span>
+                  <button 
+                    className="btn btn-ghost btn-sm" 
+                    onClick={() => setEditing(true)}
+                    style={{ fontSize: 12 }}
+                  >
+                    <Icon name="edit" size={12} />
+                    Edit Profile
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
         </div>
-        <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 4 }}>{profile?.name}</div>
-        <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 4 }}>
-          {barber?.shops?.name || (myShops.length > 0 ? myShops[0].shops.name : 'No shop assigned')}
-        </div>
-        <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 10 }}>{profile?.email}</div>
-        <span className="badge badge-blue">Barber</span>
       </div>
 
       {/* Pending Invites */}
@@ -561,13 +716,13 @@ export function BarberProfile() {
       {!loading && myShops.length > 0 && (
         <>
           <SectionHead title="My Shops" />
-          <div className="card" style={{ marginBottom: 16 }}>
+          <div className="card" style={{ marginBottom: 16, padding: '6px 12px' }}>
             {myShops.map(link => (
-              <div key={link.id} className="menu-item" style={{ cursor: 'default' }}>
-                <div className="menu-item-icon"><Icon name="store" size={16} color="var(--blue)" /></div>
-                <div className="menu-item-text">
-                  <div className="menu-item-label">{link.shops.name}</div>
-                  <div className="menu-item-sub">{link.shops.address || 'No address'}</div>
+              <div key={link.id} className="profile-menu-item" style={{ cursor: 'default' }}>
+                <div className="profile-menu-icon"><Icon name="store" size={16} color="var(--blue)" /></div>
+                <div className="profile-menu-content">
+                  <div className="profile-menu-label">{link.shops.name}</div>
+                  <div className="profile-menu-sub">{link.shops.address || 'No address'}</div>
                 </div>
                 <span className="badge badge-green">Active</span>
               </div>
@@ -576,23 +731,26 @@ export function BarberProfile() {
         </>
       )}
 
-      <div className="card">
+      <div className="card" style={{ padding: '6px 12px' }}>
         {[
           { icon: 'phone', label: 'Phone',          sub: profile?.phone || 'Not set' },
           { icon: 'info',  label: 'Help & Support', sub: 'Contact us at help@barberbook.co.in' },
         ].map((item, i) => (
-          <div key={i} className="menu-item" style={{ cursor: 'default' }}>
-            <div className="menu-item-icon"><Icon name={item.icon} size={16} color="var(--blue)" /></div>
-            <div className="menu-item-text">
-              <div className="menu-item-label">{item.label}</div>
-              <div className="menu-item-sub">{item.sub}</div>
+          <div key={i} className="profile-menu-item" style={{ cursor: 'default' }}>
+            <div className="profile-menu-icon"><Icon name={item.icon} size={16} color="var(--blue)" /></div>
+            <div className="profile-menu-content">
+              <div className="profile-menu-label">{item.label}</div>
+              <div className="profile-menu-sub">{item.sub}</div>
             </div>
           </div>
         ))}
-        <div className="menu-item" onClick={signOut}>
-          <div className="menu-item-icon danger"><Icon name="logout" size={16} color="var(--red)" /></div>
-          <div className="menu-item-text">
-            <div className="menu-item-label danger">Sign Out</div>
+        <div className="profile-menu-item" onClick={signOut} style={{ cursor: 'pointer' }}>
+          <div className="profile-menu-icon" style={{ background: 'var(--red-bg)' }}>
+            <Icon name="logout" size={16} color="var(--red)" />
+          </div>
+          <div className="profile-menu-content">
+            <div className="profile-menu-label" style={{ color: 'var(--red)' }}>Sign Out</div>
+            <div className="profile-menu-sub">You'll need to log back in</div>
           </div>
         </div>
       </div>
